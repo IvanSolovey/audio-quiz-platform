@@ -13,8 +13,7 @@ build/
 .venv/
 venv/
 env/
-claude/
-agents/
+
 
 # Environment variables — NEVER commit these
 .env
@@ -26,8 +25,6 @@ agents/
 *.sqlite3
 
 # Alembic — don't commit generated migration files but keep the folder
-alembic/versions/*.py
-!alembic/versions/.gitkeep
 
 # Audio files — stored in R2, not in git
 static/audio/
@@ -58,6 +55,8 @@ htmlcov/
 tmp/
 temp/
 *.tmp
+claude/
+agents/ 
 
 # Docker — don't commit local override files
 docker-compose.override.yml
