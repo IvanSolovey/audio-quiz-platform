@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Головна{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold mb-1"
+        style="font-family: var(--font-display); color: var(--color-text);">
+        Привіт, {{ user.name }}! Готовий до роботи?
+    </h1>
+    <p class="text-sm" style="color: var(--color-text-muted);">
+        Обирай тест, слухай — і показуй результат. Саме так навчаються в OSD.
+    </p>
+</div>
+
+<h2 class="text-base font-semibold mb-4"
+    style="font-family: var(--font-display); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem;">
+    Доступні тести
+</h2>
+
+{% if quizzes %}
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for quiz in quizzes %}
+    {% set incomplete = incomplete_by_quiz.get(quiz.id) %}
+    {% set completed  = attempts_by_quiz.get(quiz.id) %}
+
+    <a href="/quiz/{{ quiz.id }}"
+       class="block group transition-all duration-200"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              border-radius: var(--radius-lg);
+              box-shadow: var(--shadow-sm);
+              padding: 1.5rem;
+              text-decoration: none;"
+       onmouseover="this.style.boxShadow='var(--shadow-md)'; this.style.borderColor='#A0B8D0';"
+       onmouseout="this.style.boxShadow='var(--shadow-sm)'; this.style.borderColor='var(--color-border)';">
+
+        <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                 style="background: #EEF4FF;">
+                🎧
+            </div>
+
+            {% if incomplete %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
+                      style="background: var(--color-warning-bg); color: var(--color-warning);">
+                    В процесі
+                </span>
+            {% elif completed %}
+                {% set total = quiz.questions | length %}
+                {% set pct = (completed.score / total * 100) | int if total > 0 else 0 %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
+                      style="background: var(--color-success-bg); color: var(--color-success);">
+                    ✓ {{ pct }}%
+                </span>
+            {% endif %}
+        </div>
+
+        <h3 style="font-family: var(--font-display); font-weight: 700;
+                   color: var(--color-text); font-size: 1rem; margin-bottom: 0.375rem;">
+            {{ quiz.title }}
+        </h3>
+
+        {% if quiz.description %}
+        <p class="text-sm mb-3" style="color: var(--color-text-muted); line-height: 1.5;">
+            {{ quiz.description }}
+        </p>
+        {% endif %}
+
+        <div class="flex items-center justify-between mt-4 pt-4"
+             style="border-top: 1px solid var(--color-border);">
+            <span class="text-xs" style="color: var(--color-text-muted);">
+                {{ quiz.questions | length }} питань · Аудіо формат
+            </span>
+
+            {% if incomplete %}
+                <span class="text-sm font-semibold" style="color: var(--color-accent);">
+                    Продовжити →
+                </span>
+            {% elif completed %}
+                <span class="text-sm font-semibold" style="color: var(--color-text-muted);">
+                    Пройти ще раз
+                </span>
+            {% else %}
+                <span class="text-sm font-semibold" style="color: var(--color-accent);">
+                    Розпочати →
+                </span>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-20"
+     style="background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+    <p class="text-4xl mb-4">🎯</p>
+    <p class="text-base font-semibold mb-2" style="color: var(--color-text);">Тестів поки немає</p>
+    <p class="text-sm" style="color: var(--color-text-muted);">
+        Скоро твій керівник додасть перші матеріали — слідкуй за оновленнями
+    </p>
+</div>
+{% endif %}
+
+{% if categories %}
+<div class="mt-12">
+  <div class="flex items-center justify-between mb-4">
+    <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700;">
+      📚 База знань
+    </h2>
+    <a href="/docs" class="text-sm hover:underline" style="color: var(--color-primary);">
+      Переглянути всі →
+    </a>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for category in categories %}
+    <div class="rounded-xl p-5"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-xl">{{ category.icon }}</span>
+        <h3 class="font-bold text-sm" style="font-family: var(--font-display);">
+          {{ category.name }}
+        </h3>
+      </div>
+
+      <ul class="space-y-2">
+        {% for article in category.articles[:3] %}
+        <li>
+          <a href="/docs/{{ category.slug }}/{{ article.slug }}"
+             class="text-sm hover:underline flex items-center gap-2"
+             style="color: var(--color-text);">
+            <span style="color: var(--color-text-muted);">→</span>
+            {{ article.title }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% if category.articles | length > 3 %}
+      <a href="/docs/{{ category.slug }}"
+         class="text-xs mt-3 block hover:underline"
+         style="color: var(--color-primary);">
+        Ще {{ category.articles | length - 3 }} статей →
+      </a>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Контейнер для модальних оповіщень -->
+<!-- hx-trigger="load" — HTMX автоматично перевіряє при завантаженні сторінки -->
+<div id="announcement-container"
+     hx-get="/announcements/check"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+</div>
+
+{% endblock %}

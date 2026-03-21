@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}База знань — Адмін{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div class="flex items-center gap-3">
+    <a href="/admin" class="text-sm hover:underline"
+       style="color: var(--color-text-muted);">← Адмін панель</a>
+    <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+      База знань
+    </h1>
+  </div>
+  <a href="/admin/docs/article/new"
+     class="px-4 py-2 rounded-xl text-white text-sm font-semibold"
+     style="background: var(--color-accent);"
+     onmouseover="this.style.background='var(--color-accent-dark)'"
+     onmouseout="this.style.background='var(--color-accent)'">
+    + Нова стаття
+  </a>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+
+  <!-- Категорії -->
+  <div class="col-span-2">
+    {% for category in categories %}
+    <div class="mb-6 rounded-2xl overflow-hidden"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+
+      <!-- Category header -->
+      <div class="flex items-center justify-between px-6 py-4"
+           style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">{{ category.icon }}</span>
+          <div>
+            <span class="font-bold text-sm"
+                  style="font-family: var(--font-display);">{{ category.name }}</span>
+            <span class="ml-2 text-xs px-2 py-0.5 rounded"
+                  style="{% if category.is_visible %}background:#F0FDF4; color:#16A34A;
+                         {% else %}background:#F1F5F9; color:var(--color-text-muted);{% endif %}">
+              {% if category.is_visible %}Видима{% else %}Прихована{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleCategoryForm('form-{{ category.id }}')"
+                  class="text-xs px-3 py-1.5 rounded-lg"
+                  style="border: 1px solid var(--color-border); color: var(--color-text-muted);">
+            Редагувати
+          </button>
+          <form action="/admin/docs/category/{{ category.id }}/delete" method="post"
+                onsubmit="return confirm('Видалити категорію і всі статті в ній?')">
+            <button type="submit" class="text-xs px-3 py-1.5 rounded-lg"
+                    style="color: var(--color-error); border: 1px solid #FECACA;">
+              Видалити
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Edit form (hidden by default) -->
+      <div id="form-{{ category.id }}" class="hidden px-6 py-4"
+           style="border-bottom: 1px solid var(--color-border); background: #FAFBFC;">
+        <form action="/admin/docs/category/{{ category.id }}/update" method="post"
+              class="grid grid-cols-2 gap-3">
+          <input type="text" name="name" value="{{ category.name }}" required
+                 class="px-3 py-2 rounded-lg text-sm outline-none"
+                 style="border: 1px solid var(--color-border);">
+          <input type="text" name="icon" value="{{ category.icon }}"
+                 placeholder="Емодзі 📄"
+                 class="px-3 py-2 rounded-lg text-sm outline-none"
+                 style="border: 1px solid var(--color-border);">
+          <textarea name="description" rows="2"
+                    placeholder="Опис категорії"
+                    class="col-span-2 px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                    style="border: 1px solid var(--color-border);">{{ category.description or '' }}</textarea>
+          <div class="flex items-center gap-4 col-span-2">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" name="is_visible" value="true"
+                     {% if category.is_visible %}checked{% endif %}>
+              Видима стажерам
+            </label>
+            <input type="number" name="order_index" value="{{ category.order_index }}"
+                   min="0" placeholder="Порядок"
+                   class="w-24 px-3 py-2 rounded-lg text-sm outline-none"
+                   style="border: 1px solid var(--color-border);">
+            <button type="submit"
+                    class="px-4 py-2 rounded-lg text-white text-sm font-semibold ml-auto"
+                    style="background: var(--color-primary);">
+              Зберегти
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Articles list -->
+      <div class="divide-y" style="border-color: var(--color-border);">
+        {% for article in category.articles %}
+        <div class="flex items-center gap-3 px-6 py-3">
+          <span class="text-sm flex-1" style="color: var(--color-text);">
+            📄 {{ article.title }}
+          </span>
+          <span class="text-xs px-2 py-0.5 rounded"
+                style="{% if article.is_visible %}background:#F0FDF4; color:#16A34A;
+                       {% else %}background:#F1F5F9; color:var(--color-text-muted);{% endif %}">
+            {% if article.is_visible %}Опублікована{% else %}Чернетка{% endif %}
+          </span>
+          <span class="text-xs" style="color: var(--color-text-muted);">
+            {{ article.updated_at.strftime('%d.%m.%y') }}
+          </span>
+          <a href="/admin/docs/article/{{ article.id }}/edit"
+             class="text-xs hover:underline" style="color: var(--color-primary);">
+            Редагувати
+          </a>
+          <form action="/admin/docs/article/{{ article.id }}/delete" method="post"
+                onsubmit="return confirm('Видалити статтю?')">
+            <button type="submit" class="text-xs" style="color: var(--color-error);">
+              ×
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <p class="px-6 py-3 text-sm" style="color: var(--color-text-muted);">
+          Статей поки немає
+        </p>
+        {% endfor %}
+      </div>
+
+    </div>
+    {% else %}
+    <div class="text-center py-16 rounded-2xl"
+         style="background: var(--color-surface); border: 1px solid var(--color-border);">
+      <p class="text-3xl mb-3">📭</p>
+      <p class="text-sm" style="color: var(--color-text-muted);">
+        Категорій поки немає. Створіть першу у формі праворуч.
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sidebar: нова категорія -->
+  <div>
+    <div class="rounded-2xl p-6 sticky top-6"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <h2 class="font-bold text-sm mb-4" style="font-family: var(--font-display);">
+        Нова категорія
+      </h2>
+      <form action="/admin/docs/category/new" method="post" class="space-y-3">
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">Назва *</label>
+          <input type="text" name="name" required
+                 placeholder="Посадові інструкції"
+                 class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                 style="border: 1px solid var(--color-border);">
+        </div>
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">Іконка (емодзі)</label>
+          <input type="text" name="icon" value="📄"
+                 class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                 style="border: 1px solid var(--color-border);">
+        </div>
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">Опис</label>
+          <textarea name="description" rows="2" placeholder="Короткий опис..."
+                    class="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                    style="border: 1px solid var(--color-border);"></textarea>
+        </div>
+        <input type="hidden" name="order_index" value="0">
+        <button type="submit"
+                class="w-full py-2 rounded-lg text-white text-sm font-semibold"
+                style="background: var(--color-primary);"
+                onmouseover="this.style.background='var(--color-primary-dark)'"
+                onmouseout="this.style.background='var(--color-primary)'">
+          Створити категорію
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleCategoryForm(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

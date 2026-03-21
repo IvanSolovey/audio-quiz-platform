@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Стажери{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div class="flex items-center gap-3">
+    <a href="/admin" class="text-sm hover:underline"
+       style="color: var(--color-text-muted);">← Адмін панель</a>
+    <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+      👥 Стажери
+    </h1>
+  </div>
+  {% if user.has_permission('manage_users') %}
+  <a href="/admin/users"
+     class="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+     style="background: var(--color-primary);">
+    + Додати стажиста
+  </a>
+  {% endif %}
+</div>
+
+{% if trainees_data %}
+<div class="rounded-2xl overflow-hidden"
+     style="background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);">
+  <table class="w-full text-sm">
+    <thead style="background: var(--color-bg);
+                  border-bottom: 2px solid var(--color-border);">
+      <tr>
+        <th class="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide"
+            style="color: var(--color-text-muted);">Стажист</th>
+        <th class="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide"
+            style="color: var(--color-text-muted);">Пройдено</th>
+        <th class="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide"
+            style="color: var(--color-text-muted);">Середній бал</th>
+        <th class="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide"
+            style="color: var(--color-text-muted);">Остання активність</th>
+        <th class="px-6 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y" style="border-color: var(--color-border);">
+      {% for item in trainees_data %}
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <td class="px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center
+                        text-white text-xs font-bold"
+                 style="background: var(--color-primary);">
+              {{ item.user.name[0] | upper }}
+            </div>
+            <div>
+              <p class="font-semibold text-sm"
+                 style="font-family: var(--font-display);">
+                {{ item.user.name }}
+              </p>
+              <p class="text-xs" style="color: var(--color-text-muted);">
+                {{ item.user.email }}
+              </p>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <span class="font-semibold">{{ item.attempts_count }}</span>
+          <span class="text-xs ml-1" style="color: var(--color-text-muted);">квізів</span>
+        </td>
+        <td class="px-6 py-4">
+          {% if item.avg_score is not none %}
+          <div class="flex items-center gap-2">
+            <div class="w-24 h-1.5 rounded-full"
+                 style="background: var(--color-border);">
+              <div class="h-1.5 rounded-full"
+                   style="width: {{ item.avg_score }}%;
+                     background: {% if item.avg_score >= 80 %}var(--color-success)
+                     {% elif item.avg_score >= 60 %}var(--color-accent)
+                     {% else %}var(--color-error){% endif %};">
+              </div>
+            </div>
+            <span class="font-semibold text-sm"
+                  style="color: {% if item.avg_score >= 80 %}var(--color-success)
+                         {% elif item.avg_score >= 60 %}var(--color-accent)
+                         {% else %}var(--color-error){% endif %};">
+              {{ item.avg_score }}%
+            </span>
+          </div>
+          {% else %}
+          <span style="color: var(--color-text-muted);">—</span>
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 text-sm" style="color: var(--color-text-muted);">
+          {% if item.last_activity %}
+            {{ item.last_activity.strftime('%d.%m.%Y') }}
+          {% else %}
+            Ще не починав
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 text-right">
+          <a href="/admin/trainees/{{ item.user.id }}"
+             class="text-sm font-medium hover:underline"
+             style="color: var(--color-primary);">
+            Профіль →
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-16" style="color: var(--color-text-muted);">
+  <p class="text-4xl mb-4">👥</p>
+  <p>Стажерів ще немає</p>
+  {% if user.has_permission('manage_users') %}
+  <a href="/admin/users" class="text-sm mt-2 block hover:underline"
+     style="color: var(--color-primary);">
+    Додати першого стажиста
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

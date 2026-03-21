@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Пошук{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <h1 class="text-2xl font-bold mb-6"
+      style="font-family: var(--font-display);">
+    Пошук по базі знань
+  </h1>
+
+  <form action="/docs/search" method="get" class="mb-8">
+    <div class="flex gap-3">
+      <input type="search" name="q" value="{{ query }}"
+             placeholder="Введи запит..."
+             autofocus
+             class="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
+             style="border: 1.5px solid var(--color-primary); background: var(--color-surface);">
+      <button type="submit"
+              class="px-5 py-3 rounded-xl text-white text-sm font-semibold"
+              style="background: var(--color-primary);"
+              onmouseover="this.style.background='var(--color-primary-dark)'"
+              onmouseout="this.style.background='var(--color-primary)'">
+        Знайти
+      </button>
+    </div>
+  </form>
+
+  {% if query %}
+    {% if articles %}
+    <p class="text-sm mb-4" style="color: var(--color-text-muted);">
+      Знайдено {{ articles | length }} результатів для «{{ query }}»
+    </p>
+    <div class="space-y-2">
+      {% for article in articles %}
+      <a href="/docs/{{ article.category.slug }}/{{ article.slug }}"
+         class="flex items-start gap-4 px-5 py-4 rounded-xl transition-all"
+         style="background: var(--color-surface); border: 1px solid var(--color-border);
+                text-decoration: none;"
+         onmouseover="this.style.borderColor='#A0B8D0';"
+         onmouseout="this.style.borderColor='var(--color-border)';">
+        <span class="text-xl mt-0.5">{{ article.category.icon }}</span>
+        <div>
+          <p class="font-semibold text-sm" style="color: var(--color-text);
+             font-family: var(--font-display);">{{ article.title }}</p>
+          <p class="text-xs mt-0.5" style="color: var(--color-text-muted);">
+            {{ article.category.name }}
+          </p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12" style="color: var(--color-text-muted);">
+      <p class="text-3xl mb-3">🔍</p>
+      <p>Нічого не знайдено для «{{ query }}»</p>
+      <a href="/docs" class="text-sm mt-2 block hover:underline"
+         style="color: var(--color-primary);">← До бази знань</a>
+    </div>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

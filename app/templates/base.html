@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="uk" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OSD{% endblock %} — Академія</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
+
+    <!-- Google Fonts: Manrope для заголовків, Inter для тексту -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        /* OSD Brand Colors */
+        --color-primary: #1A3A5C;
+        --color-primary-dark: #122840;
+        --color-primary-light: #2A5280;
+        --color-accent: #F4871F;
+        --color-accent-dark: #D4720F;
+
+        /* Neutrals */
+        --color-bg: #F5F7FA;
+        --color-surface: #FFFFFF;
+        --color-border: #E2E8F0;
+        --color-text: #1A2332;
+        --color-text-muted: #64748B;
+
+        /* Semantic */
+        --color-success: #16A34A;
+        --color-success-bg: #F0FDF4;
+        --color-warning: #D97706;
+        --color-warning-bg: #FFFBEB;
+        --color-error: #DC2626;
+        --color-error-bg: #FEF2F2;
+
+        /* Typography */
+        --font-display: 'Manrope', sans-serif;
+        --font-body: 'Inter', sans-serif;
+
+        /* Shadows */
+        --shadow-sm: 0 1px 3px rgba(26,58,92,0.08), 0 1px 2px rgba(26,58,92,0.04);
+        --shadow-md: 0 4px 12px rgba(26,58,92,0.10), 0 2px 4px rgba(26,58,92,0.06);
+        --shadow-lg: 0 10px 30px rgba(26,58,92,0.12), 0 4px 8px rgba(26,58,92,0.08);
+
+        /* Radius */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1, h2, h3, h4 {
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+
+      /* Markdown rendered content */
+      .markdown-body h1 { font-size: 1.75rem; font-weight: 800; margin: 1.5rem 0 1rem;
+                           font-family: var(--font-display); color: var(--color-text); }
+      .markdown-body h2 { font-size: 1.35rem; font-weight: 700; margin: 1.5rem 0 0.75rem;
+                           font-family: var(--font-display); color: var(--color-text);
+                           padding-bottom: 0.5rem; border-bottom: 2px solid var(--color-border); }
+      .markdown-body h3 { font-size: 1.1rem; font-weight: 700; margin: 1.25rem 0 0.5rem;
+                           font-family: var(--font-display); color: var(--color-text); }
+      .markdown-body p  { margin: 0.75rem 0; line-height: 1.7;
+                           color: var(--color-text); font-size: 0.95rem; }
+      .markdown-body ul, .markdown-body ol { margin: 0.75rem 0 0.75rem 1.5rem; }
+      .markdown-body li { margin: 0.35rem 0; line-height: 1.6;
+                           color: var(--color-text); font-size: 0.95rem; }
+      .markdown-body strong { font-weight: 700; color: var(--color-text); }
+      .markdown-body em { font-style: italic; }
+      .markdown-body code {
+        background: #F1F5F9; color: #1A3A5C;
+        padding: 0.15rem 0.4rem; border-radius: 4px;
+        font-size: 0.875rem; font-family: 'Courier New', monospace;
+      }
+      .markdown-body pre {
+        background: #1A2332; color: #E2E8F0;
+        padding: 1.25rem; border-radius: 12px;
+        overflow-x: auto; margin: 1rem 0;
+      }
+      .markdown-body pre code { background: transparent; color: inherit; padding: 0; }
+      .markdown-body blockquote {
+        border-left: 4px solid var(--color-accent);
+        padding: 0.75rem 1rem; margin: 1rem 0;
+        background: #FFFBEB; border-radius: 0 8px 8px 0;
+        color: var(--color-text-muted);
+      }
+      .markdown-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+      .markdown-body th { background: var(--color-bg); font-weight: 600;
+                           padding: 0.6rem 1rem; text-align: left;
+                           border-bottom: 2px solid var(--color-border);
+                           font-family: var(--font-display); }
+      .markdown-body td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--color-border);
+                           vertical-align: top; }
+      .markdown-body tr:last-child td { border-bottom: none; }
+      .markdown-body tr:hover td { background: var(--color-bg); }
+      .markdown-body a { color: var(--color-primary); text-decoration: underline; }
+      .markdown-body hr { border: none; border-top: 2px solid var(--color-border); margin: 1.5rem 0; }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Навігація -->
+    <nav style="background: var(--color-primary); box-shadow: var(--shadow-md);">
+        <div class="max-w-6xl mx-auto px-6 py-0">
+            <div class="flex items-center justify-between h-16">
+
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-3">
+                    <img src="/static/big-logo-192x193.png" alt="OSD" class="h-9 w-auto">
+                    <div class="text-xs leading-tight" style="color: rgba(255,255,255,0.6);">
+                        OSD Академія
+                    </div>
+                </a>
+
+                <!-- Nav links -->
+                <div class="flex items-center gap-2 text-sm">
+                    {% if request.state.user %}
+                        <span style="color: rgba(255,255,255,0.7);" class="text-sm hidden sm:block">
+                            {{ request.state.user.name }}
+                        </span>
+
+                        {% if request.state.user.role in ('admin', 'superadmin') %}
+                            <a href="/admin"
+                               class="px-3 py-1.5 rounded-lg text-white text-sm font-medium transition-all"
+                               style="background: rgba(255,255,255,0.12);">
+                                Панель керування
+                            </a>
+                        {% else %}
+                            <a href="/dashboard"
+                               class="px-3 py-1.5 rounded-lg text-white text-sm transition-all"
+                               style="background: rgba(255,255,255,0.08);">
+                               🏡 Головна 
+                            </a>
+                            <a href="/docs"
+                               class="px-3 py-1.5 rounded-lg text-white text-sm transition-all"
+                               style="background: rgba(255,255,255,0.08);">
+                                📚 База знань
+                            </a>
+                            <a href="/progress"
+                               class="px-3 py-1.5 rounded-lg text-white text-sm transition-all"
+                               style="background: rgba(255,255,255,0.08);">
+                               📈 Мій прогрес
+                            </a>
+                        {% endif %}
+
+                        <form action="/logout" method="post">
+                            <button type="submit"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                                    style="color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06);">
+                                Вийти
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash повідомлення -->
+    {% if request.session.get('flash') %}
+    {% set flash = request.session.pop('flash') %}
+    <div class="max-w-6xl mx-auto px-6 mt-4 w-full">
+        <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+             style="
+               background: {% if flash.type == 'error' %}var(--color-error-bg){% else %}var(--color-success-bg){% endif %};
+               color: {% if flash.type == 'error' %}var(--color-error){% else %}var(--color-success){% endif %};
+               border: 1px solid {% if flash.type == 'error' %}#FECACA{% else %}#BBF7D0{% endif %};
+             ">
+            <span>{% if flash.type == 'error' %}⚠️{% else %}✓{% endif %}</span>
+            <span>{{ flash.message }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Основний контент -->
+    <main class="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Футер -->
+    <footer class="mt-16 py-6 border-t" style="border-color: var(--color-border);">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span class="text-sm" style="color: var(--color-text-muted);">
+                © 2026 OSD — Аутсорсинговий відділ збуту
+            </span>
+            <div class="flex items-center gap-4 text-sm" style="color: var(--color-text-muted);">
+                <a href="https://osd24.com" target="_blank" class="hover:underline">osd24.com</a>
+                <span>·</span>
+                <a href="tel:0800753782" class="hover:underline">0 800 753 782</a>
+                <span>·</span>
+                <span>09:00–18:00</span>
+            </div>
+        </div>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

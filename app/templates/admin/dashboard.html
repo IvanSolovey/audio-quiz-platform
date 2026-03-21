@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Панель керування{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-extrabold"
+        style="font-family: var(--font-display); color: var(--color-text);">
+        Панель керування
+    </h1>
+    {% if user.has_permission('manage_quizzes') %}
+    <a href="/admin/quiz/new"
+       class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+       style="background: var(--color-primary); font-family: var(--font-display);"
+       onmouseover="this.style.background='var(--color-primary-dark)'"
+       onmouseout="this.style.background='var(--color-primary)'">
+        + Створити тест
+    </a>
+    {% endif %}
+</div>
+
+<!-- Статистика -->
+<div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="p-6 rounded-2xl"
+         style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <p class="text-4xl font-extrabold mb-1"
+           style="font-family: var(--font-display); color: var(--color-primary);">
+            {{ quizzes | length }}
+        </p>
+        <p class="text-sm font-medium" style="color: var(--color-text-muted);">Тестів</p>
+    </div>
+    <div class="p-6 rounded-2xl"
+         style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <p class="text-4xl font-extrabold mb-1"
+           style="font-family: var(--font-display); color: var(--color-primary);">
+            {{ trainee_count }}
+        </p>
+        <p class="text-sm font-medium" style="color: var(--color-text-muted);">Стажерів</p>
+    </div>
+    <div class="p-6 rounded-2xl"
+         style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <p class="text-4xl font-extrabold mb-1"
+           style="font-family: var(--font-display); color: var(--color-primary);">
+            {{ attempts_count }}
+        </p>
+        <p class="text-sm font-medium" style="color: var(--color-text-muted);">Проходжень</p>
+    </div>
+</div>
+
+<!-- Навігація -->
+<div class="flex gap-2 mb-6 flex-wrap">
+    {% if user.has_permission('view_results') %}
+    <a href="/admin/trainees"
+       class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+       style="border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface);"
+       onmouseover="this.style.background='var(--color-bg)'"
+       onmouseout="this.style.background='var(--color-surface)'">
+        👥 Стажери
+    </a>
+    {% endif %}
+    {% if user.has_permission('manage_users') %}
+    <a href="/admin/users"
+       class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+       style="border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface);"
+       onmouseover="this.style.background='var(--color-bg)'"
+       onmouseout="this.style.background='var(--color-surface)'">
+        👥 Команда
+    </a>
+    {% endif %}
+    {% if user.has_permission('manage_knowledge') %}
+    <a href="/admin/docs"
+       class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+       style="border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface);"
+       onmouseover="this.style.background='var(--color-bg)'"
+       onmouseout="this.style.background='var(--color-surface)'">
+        📚 База знань
+    </a>
+    {% endif %}
+    {% if user.has_permission('manage_announcements') %}
+    <a href="/admin/announcements"
+       class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+       style="border: 1px solid #FED7AA; color: var(--color-accent); background: #FFF7ED;"
+       onmouseover="this.style.background='#FFEDD5'"
+       onmouseout="this.style.background='#FFF7ED'">
+        📣 Оповіщення
+    </a>
+    {% endif %}
+    {% if user.has_permission('manage_admins') %}
+    <a href="/admin/permissions"
+       class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+       style="border: 1px solid #FED7AA; color: var(--color-accent); background: #FFF7ED;"
+       onmouseover="this.style.background='#FFEDD5'"
+       onmouseout="this.style.background='#FFF7ED'">
+        🔑 Права доступу
+    </a>
+    {% endif %}
+</div>
+
+<!-- Список тестів -->
+<div class="rounded-2xl overflow-hidden"
+     style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+    {% if quizzes %}
+    <table class="w-full text-sm">
+        <thead style="background: var(--color-bg); border-bottom: 2px solid var(--color-border);">
+            <tr>
+                <th class="text-left px-6 py-3 font-semibold text-xs uppercase tracking-wide"
+                    style="color: var(--color-text-muted);">Назва тесту</th>
+                <th class="text-left px-6 py-3 font-semibold text-xs uppercase tracking-wide"
+                    style="color: var(--color-text-muted);">Питань</th>
+                <th class="text-left px-6 py-3 font-semibold text-xs uppercase tracking-wide"
+                    style="color: var(--color-text-muted);">Статус</th>
+                <th class="text-left px-6 py-3 font-semibold text-xs uppercase tracking-wide"
+                    style="color: var(--color-text-muted);">Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quiz in quizzes %}
+            <tr style="border-bottom: 1px solid var(--color-border);">
+                <td class="px-6 py-4 font-semibold" style="color: var(--color-text);">
+                    {{ quiz.title }}
+                </td>
+                <td class="px-6 py-4" style="color: var(--color-text-muted);">
+                    {{ quiz.questions | length }}
+                </td>
+                <td class="px-6 py-4">
+                    {% if quiz.is_published %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
+                          style="background: var(--color-success-bg); color: var(--color-success);">
+                        ✓ Опубліковано
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
+                          style="background: #F1F5F9; color: var(--color-text-muted);">
+                        Чернетка — стажери не бачать
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    <a href="/admin/quiz/{{ quiz.id }}"
+                       class="text-sm font-medium hover:underline mr-4"
+                       style="color: var(--color-primary);">Редагувати</a>
+                    <form action="/admin/quiz/{{ quiz.id }}/delete" method="post" class="inline"
+                          onsubmit="return confirm('Видалити тест і всі питання? Це не можна скасувати')">
+                        <button type="submit"
+                                class="text-sm font-medium hover:underline"
+                                style="color: var(--color-error);">Видалити</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-16">
+        <p class="text-3xl mb-3">📝</p>
+        <p class="text-base font-semibold mb-1" style="color: var(--color-text);">
+            Тестів ще немає. Створіть перший — це займе менше 5 хвилин
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

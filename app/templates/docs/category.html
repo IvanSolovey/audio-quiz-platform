@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm mb-6" style="color: var(--color-text-muted);">
+    <a href="/docs" class="hover:underline" style="color: var(--color-primary);">База знань</a>
+    <span>›</span>
+    <span>{{ category.name }}</span>
+  </nav>
+
+  <div class="flex items-center gap-3 mb-8">
+    <span class="text-4xl">{{ category.icon }}</span>
+    <div>
+      <h1 style="font-family: var(--font-display); font-size: 1.75rem;
+                 font-weight: 800; color: var(--color-text);">
+        {{ category.name }}
+      </h1>
+      {% if category.description %}
+      <p class="mt-1 text-sm" style="color: var(--color-text-muted);">
+        {{ category.description }}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Articles list -->
+  {% if articles %}
+  <div class="space-y-2">
+    {% for article in articles %}
+    <a href="/docs/{{ category.slug }}/{{ article.slug }}"
+       class="flex items-center gap-4 px-5 py-4 rounded-xl transition-all group"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              text-decoration: none;"
+       onmouseover="this.style.borderColor='#A0B8D0'; this.style.boxShadow='var(--shadow-sm)';"
+       onmouseout="this.style.borderColor='var(--color-border)'; this.style.boxShadow='none';">
+      <span class="text-xl">📄</span>
+      <span class="flex-1 font-medium text-sm"
+            style="color: var(--color-text); font-family: var(--font-display);">
+        {{ article.title }}
+      </span>
+      <span class="text-xs" style="color: var(--color-text-muted);">
+        {{ article.updated_at.strftime('%d.%m.%Y') }}
+      </span>
+      <span style="color: var(--color-accent);">→</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-12" style="color: var(--color-text-muted);">
+    <p>У цій категорії поки немає статей.</p>
+    <a href="/docs" class="text-sm mt-2 block hover:underline"
+       style="color: var(--color-primary);">← Повернутись до бази знань</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

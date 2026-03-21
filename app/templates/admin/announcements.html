@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Оповіщення{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-8">
+  <a href="/admin" class="text-sm hover:underline"
+     style="color: var(--color-text-muted);">← Адмін панель</a>
+  <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+    📣 Оповіщення
+  </h1>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+
+  <!-- Список оповіщень -->
+  <div class="col-span-2 space-y-4">
+
+    {% if announcements %}
+    {% for ann in announcements %}
+    <div class="rounded-2xl overflow-hidden"
+         style="background: var(--color-surface);
+                border: 1px solid {% if ann.is_active %}var(--color-border){% else %}#F1F5F9{% endif %};
+                box-shadow: var(--shadow-sm);
+                opacity: {% if ann.is_active %}1{% else %}0.6{% endif %};">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between px-6 py-4"
+           style="border-bottom: 1px solid var(--color-border);">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <span class="font-bold text-sm"
+                  style="font-family: var(--font-display);">
+              {{ ann.title }}
+            </span>
+            <!-- Статус -->
+            <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                  style="{% if ann.is_active and not ann.is_expired %}
+                    background: var(--color-success-bg); color: var(--color-success);
+                  {% else %}
+                    background: #F1F5F9; color: var(--color-text-muted);
+                  {% endif %}">
+              {% if ann.is_expired %}Закінчилось
+              {% elif ann.is_active %}Активне
+              {% else %}Вимкнено{% endif %}
+            </span>
+            <!-- Аудиторія -->
+            <span class="px-2 py-0.5 rounded text-xs"
+                  style="background: #EEF4FF; color: var(--color-primary);">
+              {{ audience_labels[ann.audience][0] }}
+            </span>
+          </div>
+          <p class="text-sm" style="color: var(--color-text-muted);">
+            {{ ann.body[:120] }}{% if ann.body | length > 120 %}...{% endif %}
+          </p>
+          {% if ann.cta_text %}
+          <p class="text-xs mt-1" style="color: var(--color-accent);">
+            🔗 {{ ann.cta_text }} → {{ ann.cta_url }}
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Дії -->
+        <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+          <form action="/admin/announcements/{{ ann.id }}/toggle" method="post">
+            <button type="submit"
+                    class="text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style="border: 1px solid var(--color-border);
+                           color: var(--color-text-muted);">
+              {% if ann.is_active %}Вимкнути{% else %}Увімкнути{% endif %}
+            </button>
+          </form>
+          <form action="/admin/announcements/{{ ann.id }}/delete" method="post"
+                onsubmit="return confirm('Видалити оповіщення?')">
+            <button type="submit" class="text-xs px-3 py-1.5 rounded-lg"
+                    style="color: var(--color-error); border: 1px solid #FECACA;">
+              Видалити
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Статистика прочитань -->
+      <div class="px-6 py-3 flex items-center gap-4 text-xs flex-wrap"
+           style="color: var(--color-text-muted); background: var(--color-bg);">
+        <span>
+          👁 Прочитали: <strong>{{ ann.reads | length }}</strong>
+        </span>
+        <span>
+          📅 Створено: {{ ann.created_at.strftime('%d.%m.%Y о %H:%M') }}
+        </span>
+        {% if ann.expires_at %}
+        <span>
+          ⏰ Діє до: {{ ann.expires_at.strftime('%d.%m.%Y') }}
+        </span>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="text-center py-16 rounded-2xl"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);">
+      <p class="text-4xl mb-4">📭</p>
+      <p class="font-medium" style="color: var(--color-text-muted);">
+        Оповіщень ще немає
+      </p>
+      <p class="text-sm mt-1" style="color: var(--color-text-muted);">
+        Створи перше — воно з'явиться у користувачів при вході
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar: форма створення -->
+  <div>
+    <div class="rounded-2xl p-6 sticky top-6"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+
+      <h2 class="font-bold text-sm mb-5" style="font-family: var(--font-display);">
+        Нове оповіщення
+      </h2>
+
+      <form action="/admin/announcements/new" method="post" class="space-y-4">
+
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">
+            Заголовок *
+          </label>
+          <input type="text" name="title" required
+                 placeholder="Нові матеріали для навчання"
+                 class="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                 style="border: 1.5px solid var(--color-border);"
+                 onfocus="this.style.borderColor='var(--color-primary)'"
+                 onblur="this.style.borderColor='var(--color-border)'">
+        </div>
+
+        <div>
+          <label class="text-xs font-medium block mb-2"
+                 style="color: var(--color-text-muted);">
+            Текст * <span style="color: var(--color-text-muted); font-weight: 400;">(підтримується Markdown)</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <textarea name="content" id="ann-body" required rows="6"
+                      placeholder="Описи що нового або важливого..."
+                      class="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none"
+                      style="border: 1.5px solid var(--color-border);"
+                      onfocus="this.style.borderColor='var(--color-primary)'"
+                      onblur="this.style.borderColor='var(--color-border)'"
+                      hx-post="/admin/docs/preview"
+                      hx-trigger="keyup changed delay:500ms"
+                      hx-target="#ann-preview"
+                      hx-swap="innerHTML"
+                      hx-include="#ann-body"></textarea>
+            <div id="ann-preview"
+                 class="markdown-body px-3 py-2.5 rounded-xl text-sm overflow-y-auto"
+                 style="border: 1px solid var(--color-border);
+                        min-height: 150px;
+                        background: var(--color-bg);
+                        color: var(--color-text-muted);">
+              Почни писати...
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">
+            Аудиторія *
+          </label>
+          <select name="audience" required
+                  class="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                  style="border: 1.5px solid var(--color-border);">
+            <option value="all">🌐 Всі користувачі</option>
+            <option value="trainees">👥 Тільки стажери</option>
+            <option value="admins">🔑 Тільки адміни</option>
+          </select>
+        </div>
+
+        <!-- CTA блок -->
+        <div class="p-4 rounded-xl" style="background: var(--color-bg);">
+          <p class="text-xs font-medium mb-3" style="color: var(--color-text-muted);">
+            Кнопка з посиланням (необов'язково)
+          </p>
+          <div class="space-y-2">
+            <input type="text" name="cta_text"
+                   placeholder="Текст кнопки (напр. Перейти до квізу)"
+                   class="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                   style="border: 1px solid var(--color-border);"
+                   onfocus="this.style.borderColor='var(--color-primary)'"
+                   onblur="this.style.borderColor='var(--color-border)'">
+            <input type="text" name="cta_url"
+                   placeholder="/quiz/uuid або https://..."
+                   class="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                   style="border: 1px solid var(--color-border);"
+                   onfocus="this.style.borderColor='var(--color-primary)'"
+                   onblur="this.style.borderColor='var(--color-border)'">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">
+            Діє до (необов'язково)
+          </label>
+          <input type="datetime-local" name="expires_at"
+                 class="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                 style="border: 1.5px solid var(--color-border);">
+          <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+            Якщо не вказано — діє безстроково
+          </p>
+        </div>
+
+        <button type="submit"
+                class="w-full py-3 rounded-xl text-white text-sm font-semibold"
+                style="background: var(--color-accent);"
+                onmouseover="this.style.background='var(--color-accent-dark)'"
+                onmouseout="this.style.background='var(--color-accent)'">
+          📣 Опублікувати оповіщення
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

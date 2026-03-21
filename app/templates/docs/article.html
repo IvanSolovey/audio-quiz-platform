@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm mb-6" style="color: var(--color-text-muted);">
+    <a href="/docs" class="hover:underline" style="color: var(--color-primary);">База знань</a>
+    <span>›</span>
+    <a href="/docs/{{ category.slug }}" class="hover:underline"
+       style="color: var(--color-primary);">{{ category.name }}</a>
+    <span>›</span>
+    <span>{{ article.title }}</span>
+  </nav>
+
+  <!-- Article header -->
+  <div class="mb-8">
+    <h1 style="font-family: var(--font-display); font-size: 2rem;
+               font-weight: 800; color: var(--color-text); line-height: 1.2;">
+      {{ article.title }}
+    </h1>
+    <p class="text-xs mt-3" style="color: var(--color-text-muted);">
+      Оновлено {{ article.updated_at.strftime('%d.%m.%Y о %H:%M') }}
+    </p>
+  </div>
+
+  <!-- Article content -->
+  <div class="markdown-body p-8 rounded-2xl"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+    {{ content_html | safe }}
+  </div>
+
+  <!-- Navigation -->
+  <div class="mt-8 pt-6 flex items-center justify-between"
+       style="border-top: 1px solid var(--color-border);">
+    <a href="/docs/{{ category.slug }}"
+       class="text-sm hover:underline flex items-center gap-2"
+       style="color: var(--color-primary);">
+      ← {{ category.name }}
+    </a>
+    <a href="/docs"
+       class="text-sm hover:underline"
+       style="color: var(--color-text-muted);">
+      База знань
+    </a>
+  </div>
+
+</div>
+{% endblock %}

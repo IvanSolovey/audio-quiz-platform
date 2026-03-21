@@ -1,0 +1,68 @@
+<div class="rounded-2xl p-6"
+     style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+
+    <!-- Текст питання -->
+    <p class="font-semibold mb-5" style="font-family: var(--font-display); color: var(--color-text); font-size: 1.05rem;">
+        {{ question.text }}
+    </p>
+
+    <!-- Аудіоплеєр -->
+    <div class="mb-6 p-5 rounded-xl" style="background: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="flex items-center gap-2 mb-3">
+            <span style="color: var(--color-accent);">🎧</span>
+            <span class="text-xs font-semibold uppercase tracking-wide"
+                  style="color: var(--color-text-muted);">
+                Уважно прослухай запис
+            </span>
+        </div>
+        <audio controls preload="metadata" class="w-full" id="audio-player"
+               src="{{ question.audio_url }}"
+               style="border-radius: 8px;">
+            Ваш браузер не підтримує аудіо.
+        </audio>
+    </div>
+
+    <!-- Варіанти відповідей — заблоковані до кінця аудіо -->
+    <div id="answers" class="space-y-3 opacity-40 pointer-events-none transition-opacity duration-300">
+        <p id="answer-hint" class="text-xs font-medium mb-3"
+           style="color: var(--color-text-muted);">
+            ↑ Спочатку прослухай аудіо — варіанти з'являться після
+        </p>
+        {% for option in question.options %}
+        <button
+            hx-post="/quiz/{{ quiz.id }}/answer"
+            hx-target="#quiz-container"
+            hx-swap="innerHTML"
+            hx-include="#attempt-data"
+            hx-vals='{"question_id": "{{ question.id }}", "option_id": "{{ option.id }}"}'
+            class="w-full text-left px-4 py-3 rounded-xl transition-all font-medium text-sm"
+            style="border: 1.5px solid var(--color-border); background: var(--color-surface);
+                   color: var(--color-text); cursor: pointer;"
+            onmouseover="this.style.borderColor='var(--color-primary)'; this.style.background='#EEF4FF';"
+            onmouseout="this.style.borderColor='var(--color-border)'; this.style.background='var(--color-surface)';">
+            {{ option.text }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Приховані дані спроби -->
+    <div id="attempt-data">
+        <input type="hidden" name="attempt_id" value="{{ attempt_id }}">
+    </div>
+</div>
+
+<!-- Розблокування після прослуховування -->
+<script>
+(function() {
+    const audio = document.getElementById('audio-player');
+    const answers = document.getElementById('answers');
+    const hint = document.getElementById('answer-hint');
+
+    if (audio && answers) {
+        audio.addEventListener('ended', function() {
+            answers.classList.remove('opacity-40', 'pointer-events-none');
+            if (hint) hint.textContent = 'Обери одну правильну відповідь';
+        });
+    }
+})();
+</script>

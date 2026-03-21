@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}{% if quiz %}{{ quiz.title }}{% else %}Новий тест{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+    <div class="flex items-center gap-3 mb-8">
+        <a href="/admin" class="text-sm font-medium hover:underline"
+           style="color: var(--color-text-muted);">← Назад</a>
+        <h1 class="text-2xl font-extrabold"
+            style="font-family: var(--font-display); color: var(--color-text);">
+            {% if quiz %}{{ quiz.title }}{% else %}Новий тест{% endif %}
+        </h1>
+    </div>
+
+    <!-- Форма тесту -->
+    <div class="rounded-2xl p-6 mb-6"
+         style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <h2 class="font-bold mb-5 text-base"
+            style="font-family: var(--font-display); color: var(--color-text);">
+            Загальна інформація
+        </h2>
+        <form action="{% if quiz %}/admin/quiz/{{ quiz.id }}/update{% else %}/admin/quiz/new{% endif %}"
+              method="post" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                    Назва тесту
+                </label>
+                <input type="text" name="title" required
+                       value="{{ quiz.title if quiz else '' }}"
+                       class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+                       style="border: 1.5px solid var(--color-border); background: var(--color-bg);
+                              font-family: var(--font-body);"
+                       onfocus="this.style.borderColor='var(--color-primary)'"
+                       onblur="this.style.borderColor='var(--color-border)'">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                    Опис (необов'язково)
+                </label>
+                <textarea name="description" rows="2"
+                          class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all resize-none"
+                          style="border: 1.5px solid var(--color-border); background: var(--color-bg);
+                                 font-family: var(--font-body);"
+                          onfocus="this.style.borderColor='var(--color-primary)'"
+                          onblur="this.style.borderColor='var(--color-border)'">{{ quiz.description if quiz else '' }}</textarea>
+            </div>
+            {% if quiz %}
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="is_published" name="is_published" value="true"
+                       {% if quiz.is_published %}checked{% endif %}
+                       class="w-4 h-4 rounded">
+                <label for="is_published" class="text-sm" style="color: var(--color-text);">
+                    Опублікувати — стажери побачать цей тест
+                </label>
+            </div>
+            {% endif %}
+            <button type="submit"
+                    class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                    style="background: var(--color-primary); font-family: var(--font-display);"
+                    onmouseover="this.style.background='var(--color-primary-dark)'"
+                    onmouseout="this.style.background='var(--color-primary)'">
+                {% if quiz %}Зберегти зміни{% else %}Створити тест{% endif %}
+            </button>
+        </form>
+    </div>
+
+    {% if quiz %}
+    <!-- Список питань -->
+    <div class="rounded-2xl p-6 mb-6"
+         style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <h2 class="font-bold mb-5 text-base"
+            style="font-family: var(--font-display); color: var(--color-text);">
+            Питання ({{ quiz.questions | length }})
+        </h2>
+
+        {% if quiz.questions %}
+        <div class="space-y-3 mb-6">
+            {% for question in quiz.questions %}
+            <div class="flex items-start gap-3 p-4 rounded-xl"
+                 style="background: var(--color-bg); border: 1px solid var(--color-border);">
+                <span class="text-xs font-bold mt-0.5 w-5 text-center"
+                      style="color: var(--color-text-muted);">{{ loop.index }}</span>
+                <div class="flex-1">
+                    <p class="font-semibold text-sm mb-2" style="color: var(--color-text);">
+                        {{ question.text }}
+                    </p>
+                    <audio controls src="{{ question.audio_url }}" class="w-full h-8 mt-1"
+                           style="border-radius: 6px;"></audio>
+                    <div class="flex gap-2 mt-2 flex-wrap">
+                        {% for option in question.options %}
+                        <span class="text-xs px-2.5 py-1 rounded-lg font-medium"
+                              style="background: {% if option.is_correct %}var(--color-success-bg){% else %}#F1F5F9{% endif %};
+                                     color: {% if option.is_correct %}var(--color-success){% else %}var(--color-text-muted){% endif %};">
+                            {% if option.is_correct %}✓ {% endif %}{{ option.text }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <form action="/admin/quiz/{{ quiz.id }}/question/{{ question.id }}/delete"
+                      method="post"
+                      onsubmit="return confirm('Видалити це питання?')">
+                    <button type="submit"
+                            class="text-lg leading-none px-1 transition-colors"
+                            style="color: #CBD5E1;"
+                            onmouseover="this.style.color='var(--color-error)'"
+                            onmouseout="this.style.color='#CBD5E1'">×</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Форма нового питання -->
+        <h3 class="font-semibold text-sm mb-3" style="color: var(--color-text);">+ Додати питання</h3>
+        <form action="/admin/quiz/{{ quiz.id }}/question/add"
+              method="post"
+              enctype="multipart/form-data"
+              class="space-y-4 p-5 rounded-xl"
+              style="border: 1.5px solid var(--color-border); background: var(--color-bg);">
+
+            <div>
+                <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                    Інструкція до аудіо
+                </label>
+                <input type="text" name="text" required
+                       placeholder="Наприклад: Яке слово вимовляє менеджер?"
+                       class="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+                       style="border: 1.5px solid var(--color-border); background: var(--color-surface);
+                              font-family: var(--font-body);"
+                       onfocus="this.style.borderColor='var(--color-primary)'"
+                       onblur="this.style.borderColor='var(--color-border)'">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                    Аудіофайл (mp3, wav, ogg, m4a — до 50 МБ)
+                </label>
+                <input type="file" name="audio_file" required
+                       accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a"
+                       class="w-full text-sm"
+                       style="color: var(--color-text-muted);">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--color-text);">
+                    Варіанти відповідей
+                </label>
+                <div id="options-list" class="space-y-2">
+                    <!-- option row 1 -->
+                    <div class="option-row flex items-center gap-2">
+                        <input type="radio" name="correct_option" value="1" required
+                               class="w-4 h-4 shrink-0" title="Правильна відповідь">
+                        <input type="text" name="option_1" required placeholder="Варіант 1"
+                               class="flex-1 px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                               style="border: 1.5px solid var(--color-border); background: var(--color-surface);
+                                      font-family: var(--font-body);"
+                               onfocus="this.style.borderColor='var(--color-primary)'"
+                               onblur="this.style.borderColor='var(--color-border)'">
+                    </div>
+                    <!-- option row 2 -->
+                    <div class="option-row flex items-center gap-2">
+                        <input type="radio" name="correct_option" value="2" required
+                               class="w-4 h-4 shrink-0" title="Правильна відповідь">
+                        <input type="text" name="option_2" required placeholder="Варіант 2"
+                               class="flex-1 px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                               style="border: 1.5px solid var(--color-border); background: var(--color-surface);
+                                      font-family: var(--font-body);"
+                               onfocus="this.style.borderColor='var(--color-primary)'"
+                               onblur="this.style.borderColor='var(--color-border)'">
+                        <button type="button" onclick="removeOption(this)"
+                                class="remove-btn text-lg leading-none px-1 hidden transition-colors"
+                                style="color: #CBD5E1;"
+                                onmouseover="this.style.color='var(--color-error)'"
+                                onmouseout="this.style.color='#CBD5E1'">×</button>
+                    </div>
+                </div>
+                <button type="button" id="add-option-btn" onclick="addOption()"
+                        class="mt-2 text-sm font-semibold hover:underline"
+                        style="color: var(--color-primary);">
+                    + Додати варіант
+                </button>
+                <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+                    Оберіть радіокнопку поруч з правильною відповіддю
+                </p>
+            </div>
+
+            <button type="submit"
+                    class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                    style="background: var(--color-success); font-family: var(--font-display);"
+                    onmouseover="this.style.background='#15803D'"
+                    onmouseout="this.style.background='var(--color-success)'">
+                Додати питання
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const MAX_OPTIONS = 6;
+    const BORDER = 'var(--color-border)';
+    const PRIMARY = 'var(--color-primary)';
+
+    function makeInput(n) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.name = 'option_' + n;
+        inp.placeholder = 'Варіант ' + n;
+        inp.className = 'flex-1 px-3 py-2 rounded-lg text-sm outline-none transition-all';
+        inp.style.cssText = 'border: 1.5px solid ' + BORDER + '; background: var(--color-surface); font-family: var(--font-body);';
+        inp.addEventListener('focus', function() { this.style.borderColor = PRIMARY; });
+        inp.addEventListener('blur', function() { this.style.borderColor = BORDER; });
+        return inp;
+    }
+
+    function refreshState() {
+        const rows = document.querySelectorAll('#options-list .option-row');
+        const btn = document.getElementById('add-option-btn');
+        if (!btn) return;
+
+        rows.forEach(function (row, i) {
+            const n = i + 1;
+            const radio = row.querySelector('input[type="radio"]');
+            const text  = row.querySelector('input[type="text"]');
+            const rm    = row.querySelector('.remove-btn');
+
+            radio.value = String(n);
+            text.name   = 'option_' + n;
+            text.placeholder = 'Варіант ' + n;
+            text.required = (n <= 2);
+            if (rm) rm.classList.toggle('hidden', rows.length <= 2 || n === 1);
+        });
+
+        btn.style.display = rows.length >= MAX_OPTIONS ? 'none' : '';
+    }
+
+    window.addOption = function () {
+        const rows = document.querySelectorAll('#options-list .option-row');
+        if (rows.length >= MAX_OPTIONS) return;
+
+        const n = rows.length + 1;
+        const div = document.createElement('div');
+        div.className = 'option-row flex items-center gap-2';
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'correct_option';
+        radio.value = String(n);
+        radio.className = 'w-4 h-4 shrink-0';
+        radio.title = 'Правильна відповідь';
+
+        const inp = makeInput(n);
+
+        const rmBtn = document.createElement('button');
+        rmBtn.type = 'button';
+        rmBtn.className = 'remove-btn text-lg leading-none px-1 transition-colors';
+        rmBtn.style.color = '#CBD5E1';
+        rmBtn.textContent = '×';
+        rmBtn.setAttribute('onclick', 'removeOption(this)');
+        rmBtn.addEventListener('mouseover', function() { this.style.color = 'var(--color-error)'; });
+        rmBtn.addEventListener('mouseout', function() { this.style.color = '#CBD5E1'; });
+
+        div.appendChild(radio);
+        div.appendChild(inp);
+        div.appendChild(rmBtn);
+
+        document.getElementById('options-list').appendChild(div);
+        inp.focus();
+        refreshState();
+    };
+
+    window.removeOption = function (btn) {
+        const rows = document.querySelectorAll('#options-list .option-row');
+        if (rows.length <= 2) return;
+
+        const radio = btn.closest('.option-row').querySelector('input[type="radio"]');
+        if (radio.checked) radio.checked = false;
+
+        btn.closest('.option-row').remove();
+        refreshState();
+    };
+
+    refreshState();
+})();
+</script>
+{% endblock %}

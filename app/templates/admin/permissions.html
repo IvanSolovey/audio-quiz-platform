@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Управління правами{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-8">
+  <a href="/admin" class="text-sm hover:underline"
+     style="color: var(--color-text-muted);">← Адмін панель</a>
+  <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+    🔑 Управління адміністраторами
+  </h1>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+
+  <!-- Список адмінів -->
+  <div class="col-span-2 space-y-4">
+    <h2 class="font-bold text-sm uppercase tracking-wide"
+        style="color: var(--color-text-muted);">
+      Поточні адміністратори
+    </h2>
+
+    {% for admin_user in admins %}
+    <div class="rounded-2xl overflow-hidden"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4"
+           style="border-bottom: 1px solid var(--color-border);">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center
+                      text-white text-sm font-bold"
+               style="background: {% if admin_user.is_superadmin %}var(--color-accent){% else %}var(--color-primary){% endif %};">
+            {{ admin_user.name[0] | upper }}
+          </div>
+          <div>
+            <p class="font-bold text-sm"
+               style="font-family: var(--font-display);">
+              {{ admin_user.name }}
+            </p>
+            <p class="text-xs" style="color: var(--color-text-muted);">
+              {{ admin_user.email }}
+            </p>
+          </div>
+          {% if admin_user.is_superadmin %}
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
+                style="background: #FFF7ED; color: var(--color-accent);">
+            ⭐ Супер-адмін
+          </span>
+          {% endif %}
+        </div>
+
+        {% if not admin_user.is_superadmin and user.can_manage_admin(admin_user) %}
+        <form action="/admin/permissions/{{ admin_user.id }}/demote" method="post"
+              onsubmit="return confirm('Зняти права адміна у {{ admin_user.name }}?')">
+          <button type="submit" class="text-xs px-3 py-1.5 rounded-lg"
+                  style="color: var(--color-error); border: 1px solid #FECACA;">
+            Зняти права
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Permissions -->
+      {% if not admin_user.is_superadmin %}
+      <div class="px-6 py-4">
+        <form action="/admin/permissions/{{ admin_user.id }}/update" method="post">
+          <div class="grid grid-cols-2 gap-2 mb-4">
+            {% for perm_key, perm_label, perm_icon in all_permissions %}
+            <label class="flex items-center gap-2.5 p-3 rounded-xl cursor-pointer transition-all"
+                   style="border: 1.5px solid {% if admin_user.has_permission(perm_key) %}var(--color-primary){% else %}var(--color-border){% endif %};
+                          background: {% if admin_user.has_permission(perm_key) %}#EEF4FF{% else %}transparent{% endif %};">
+              <input type="checkbox" name="permissions" value="{{ perm_key }}"
+                     {% if admin_user.has_permission(perm_key) %}checked{% endif %}
+                     {% if perm_key == 'manage_admins' and not user.is_superadmin and not user.has_permission('manage_admins') %}disabled{% endif %}
+                     class="w-4 h-4">
+              <span class="text-sm">{{ perm_icon }} {{ perm_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if user.can_manage_admin(admin_user) %}
+          <button type="submit"
+                  class="px-4 py-2 rounded-lg text-white text-sm font-semibold"
+                  style="background: var(--color-primary);">
+            Зберегти права
+          </button>
+          {% endif %}
+        </form>
+      </div>
+      {% else %}
+      <div class="px-6 py-3">
+        <p class="text-sm" style="color: var(--color-text-muted);">
+          Супер-адмін має повний доступ до всього
+        </p>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+
+    {% if not admins %}
+    <div class="text-center py-8" style="color: var(--color-text-muted);">
+      <p>Адміністраторів ще немає</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar: підвищити стажиста -->
+  <div>
+    <div class="rounded-2xl p-6 sticky top-6"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <h2 class="font-bold text-sm mb-4" style="font-family: var(--font-display);">
+        Призначити адміністратора
+      </h2>
+
+      <form action="/admin/permissions/promote" method="post" class="space-y-4">
+
+        <div>
+          <label class="text-xs font-medium block mb-1"
+                 style="color: var(--color-text-muted);">
+            Стажист
+          </label>
+          <select name="user_id" required
+                  class="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                  style="border: 1.5px solid var(--color-border);">
+            <option value="">Обери стажиста...</option>
+            {% for trainee in trainees %}
+            <option value="{{ trainee.id }}">
+              {{ trainee.name }} ({{ trainee.email }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium block mb-2"
+                 style="color: var(--color-text-muted);">
+            Права доступу
+          </label>
+          <div class="space-y-2">
+            {% for perm_key, perm_label, perm_icon in all_permissions %}
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="permissions" value="{{ perm_key }}"
+                     {% if perm_key == 'manage_admins' and not user.is_superadmin and not user.has_permission('manage_admins') %}disabled{% endif %}
+                     class="w-4 h-4">
+              <span class="text-sm">{{ perm_icon }} {{ perm_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit"
+                class="w-full py-2.5 rounded-xl text-white text-sm font-semibold"
+                style="background: var(--color-accent);">
+          Призначити адміністратором
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

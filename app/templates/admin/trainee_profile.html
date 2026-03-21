@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{{ trainee.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  <!-- Breadcrumb -->
+  <div class="flex items-center gap-2 text-sm mb-6"
+       style="color: var(--color-text-muted);">
+    <a href="/admin" class="hover:underline"
+       style="color: var(--color-primary);">Адмін панель</a>
+    <span>›</span>
+    <a href="/admin/trainees" class="hover:underline"
+       style="color: var(--color-primary);">Стажери</a>
+    <span>›</span>
+    <span>{{ trainee.name }}</span>
+  </div>
+
+  <!-- Profile header -->
+  <div class="flex items-center gap-5 mb-8 p-6 rounded-2xl"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+    <div class="w-16 h-16 rounded-2xl flex items-center justify-center
+                text-white text-2xl font-bold flex-shrink-0"
+         style="background: var(--color-primary);
+                font-family: var(--font-display);">
+      {{ trainee.name[0] | upper }}
+    </div>
+    <div class="flex-1">
+      <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+        {{ trainee.name }}
+      </h1>
+      <p class="text-sm mt-0.5" style="color: var(--color-text-muted);">
+        {{ trainee.email }}
+      </p>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        У команді з {{ trainee.created_at.strftime('%d.%m.%Y') }}
+      </p>
+    </div>
+    {% if stats.recent_activity %}
+    <div class="text-right">
+      <p class="text-xs" style="color: var(--color-text-muted);">
+        Остання активність
+      </p>
+      <p class="text-sm font-semibold mt-0.5">
+        {{ stats.recent_activity.strftime('%d.%m.%Y о %H:%M') }}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if stats.total_attempts > 0 %}
+
+  <!-- Stats grid -->
+  <div class="grid grid-cols-4 gap-4 mb-6">
+
+    <div class="p-5 rounded-2xl text-center"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <p class="text-3xl font-bold"
+         style="font-family: var(--font-display); color: var(--color-primary);">
+        {{ stats.unique_quizzes }}
+      </p>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        Квізів пройдено
+      </p>
+    </div>
+
+    <div class="p-5 rounded-2xl text-center"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <p class="text-3xl font-bold"
+         style="font-family: var(--font-display); color: var(--color-primary);">
+        {{ stats.total_attempts }}
+      </p>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        Всього спроб
+      </p>
+    </div>
+
+    <div class="p-5 rounded-2xl text-center"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <p class="text-3xl font-bold"
+         style="font-family: var(--font-display);
+                color: {% if stats.average_score and stats.average_score >= 80 %}var(--color-success)
+                {% elif stats.average_score and stats.average_score >= 60 %}var(--color-accent)
+                {% else %}var(--color-error){% endif %};">
+        {% if stats.average_score %}{{ stats.average_score }}%{% else %}—{% endif %}
+      </p>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        Середній бал
+      </p>
+    </div>
+
+    <div class="p-5 rounded-2xl text-center"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <p class="text-3xl font-bold"
+         style="font-family: var(--font-display); color: var(--color-success);">
+        {% if stats.best_score %}{{ stats.best_score }}%{% else %}—{% endif %}
+      </p>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        Кращий результат
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Chart placeholder (резерв для Chart.js) -->
+  <div class="p-6 mb-6 rounded-2xl flex items-center justify-center"
+       style="background: var(--color-surface);
+              border: 1px dashed var(--color-border);
+              min-height: 160px;">
+    <div class="text-center" style="color: var(--color-text-muted);">
+      <p class="text-2xl mb-2">📈</p>
+      <p class="text-sm font-medium">Графік динаміки</p>
+      <p class="text-xs mt-1">Буде доступний у наступному оновленні</p>
+    </div>
+  </div>
+
+  <!-- Quiz results with progress bars -->
+  <div class="mb-6 rounded-2xl overflow-hidden"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+
+    <div class="px-6 py-4"
+         style="border-bottom: 2px solid var(--color-border);
+                background: var(--color-bg);">
+      <h2 class="font-bold text-sm" style="font-family: var(--font-display);">
+        Результати по квізах
+      </h2>
+    </div>
+
+    <div class="divide-y" style="border-color: var(--color-border);">
+      {% for qs in stats.quiz_stats %}
+      <div class="px-6 py-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-medium text-sm"
+                style="font-family: var(--font-display);">
+            {{ qs.quiz_title }}
+          </span>
+          <div class="flex items-center gap-3">
+            <span class="text-xs" style="color: var(--color-text-muted);">
+              {{ qs.attempts_count }} спроб
+            </span>
+            <span class="font-bold text-sm"
+                  style="color: {% if qs.best_pct >= 80 %}var(--color-success)
+                         {% elif qs.best_pct >= 60 %}var(--color-accent)
+                         {% else %}var(--color-error){% endif %};">
+              {{ qs.best_pct }}%
+            </span>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div class="w-full h-2 rounded-full"
+             style="background: var(--color-border);">
+          <div class="h-2 rounded-full transition-all"
+               style="width: {{ qs.best_pct }}%;
+                 background: {% if qs.best_pct >= 80 %}var(--color-success)
+                 {% elif qs.best_pct >= 60 %}var(--color-accent)
+                 {% else %}var(--color-error){% endif %};">
+          </div>
+        </div>
+        <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+          Остання спроба: {{ qs.last_attempt.strftime('%d.%m.%Y') }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Activity timeline -->
+  <div class="rounded-2xl overflow-hidden"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+
+    <div class="px-6 py-4"
+         style="border-bottom: 2px solid var(--color-border);
+                background: var(--color-bg);">
+      <h2 class="font-bold text-sm" style="font-family: var(--font-display);">
+        Хронологія спроб
+      </h2>
+    </div>
+
+    <div class="divide-y" style="border-color: var(--color-border);">
+      {% for attempt in stats.attempts %}
+      {% set total_q = attempt.quiz.questions | length %}
+      {% set pct = (attempt.score / total_q * 100) | round(1) if total_q > 0 and attempt.score is not none else 0 %}
+      <div class="flex items-center gap-4 px-6 py-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+             style="background: {% if pct >= 80 %}var(--color-success-bg){% elif pct >= 60 %}#FFF7ED{% else %}var(--color-error-bg){% endif %};
+                    color: {% if pct >= 80 %}var(--color-success){% elif pct >= 60 %}var(--color-accent){% else %}var(--color-error){% endif %};">
+          {{ pct | int }}%
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium">{{ attempt.quiz.title }}</p>
+          <p class="text-xs" style="color: var(--color-text-muted);">
+            {{ attempt.score }} з {{ total_q }} правильних
+          </p>
+        </div>
+        <p class="text-xs" style="color: var(--color-text-muted);">
+          {{ attempt.completed_at.strftime('%d.%m.%Y о %H:%M') }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% else %}
+
+  <!-- Empty state -->
+  <div class="text-center py-20 rounded-2xl"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);">
+    <p class="text-5xl mb-4">🎯</p>
+    <h2 class="text-lg font-bold mb-2" style="font-family: var(--font-display);">
+      Стажист ще не проходив квізів
+    </h2>
+    <p class="text-sm" style="color: var(--color-text-muted);">
+      Результати з'являться після першого проходження
+    </p>
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

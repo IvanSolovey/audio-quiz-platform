@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Не знайдено{% endblock %}
+{% block content %}
+<div class="text-center py-20" style="color: var(--color-text-muted);">
+  <p class="text-5xl mb-4">📭</p>
+  <h1 class="text-xl font-bold mb-2" style="font-family: var(--font-display);">
+    Статтю не знайдено
+  </h1>
+  <p class="text-sm mb-6">Можливо її видалили або вона ще не опублікована.</p>
+  <a href="/docs" class="text-sm hover:underline" style="color: var(--color-primary);">
+    ← Повернутись до бази знань
+  </a>
+</div>
+{% endblock %}

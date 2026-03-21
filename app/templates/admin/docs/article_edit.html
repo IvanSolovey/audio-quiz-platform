@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{% if article %}Редагування{% else %}Нова стаття{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  #preview h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.75rem;
+                font-family: var(--font-display); }
+  #preview h2 { font-size: 1.2rem; font-weight: 700; margin: 1rem 0 0.5rem;
+                font-family: var(--font-display);
+                padding-bottom: 0.4rem; border-bottom: 2px solid var(--color-border); }
+  #preview h3 { font-size: 1rem; font-weight: 700; margin: 0.75rem 0 0.4rem;
+                font-family: var(--font-display); }
+  #preview p  { margin: 0.5rem 0; line-height: 1.6; font-size: 0.9rem; }
+  #preview ul, #preview ol { margin: 0.5rem 0 0.5rem 1.25rem; }
+  #preview li { margin: 0.25rem 0; font-size: 0.9rem; }
+  #preview code { background: #F1F5F9; padding: 0.1rem 0.3rem;
+                  border-radius: 4px; font-size: 0.8rem; }
+  #preview pre { background: #1A2332; color: #E2E8F0; padding: 1rem;
+                 border-radius: 8px; overflow-x: auto; margin: 0.75rem 0; }
+  #preview pre code { background: transparent; color: inherit; }
+  #preview blockquote { border-left: 4px solid var(--color-accent);
+                        padding: 0.5rem 0.75rem; background: #FFFBEB;
+                        margin: 0.75rem 0; border-radius: 0 6px 6px 0; }
+  #preview table { width: 100%; border-collapse: collapse; margin: 0.75rem 0;
+                   font-size: 0.875rem; }
+  #preview th { background: var(--color-bg); font-weight: 600;
+                padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--color-border); }
+  #preview td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--color-border); }
+  #preview a { color: var(--color-primary); text-decoration: underline; }
+  #preview strong { font-weight: 700; }
+  #preview hr { border: none; border-top: 2px solid var(--color-border); margin: 0.75rem 0; }
+
+  .editor-pane { height: calc(100vh - 280px); min-height: 400px; }
+  textarea#content { resize: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <a href="/admin/docs" class="text-sm hover:underline"
+     style="color: var(--color-text-muted);">← База знань</a>
+  <h1 class="text-xl font-bold" style="font-family: var(--font-display);">
+    {% if article %}{{ article.title }}{% else %}Нова стаття{% endif %}
+  </h1>
+</div>
+
+<form action="{% if article %}/admin/docs/article/{{ article.id }}/update{% else %}/admin/docs/article/new{% endif %}"
+      method="post">
+
+  <!-- Top bar -->
+  <div class="flex items-center gap-3 mb-4 p-4 rounded-xl"
+       style="background: var(--color-surface); border: 1px solid var(--color-border);">
+
+    <!-- Назва -->
+    <input type="text" name="title" required
+           value="{{ article.title if article else '' }}"
+           placeholder="Назва статті"
+           class="flex-1 px-4 py-2.5 rounded-xl text-base font-semibold outline-none"
+           style="border: 1.5px solid var(--color-border);
+                  font-family: var(--font-display);"
+           onfocus="this.style.borderColor='var(--color-primary)'"
+           onblur="this.style.borderColor='var(--color-border)'">
+
+    <!-- Категорія -->
+    <select name="category_id" required
+            class="px-3 py-2.5 rounded-xl text-sm outline-none"
+            style="border: 1.5px solid var(--color-border);">
+      {% for cat in categories %}
+      <option value="{{ cat.id }}"
+        {% if article and article.category_id == cat.id %}selected{% endif %}>
+        {{ cat.icon }} {{ cat.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Порядок -->
+    <input type="number" name="order_index" min="0"
+           value="{{ article.order_index if article else 0 }}"
+           class="w-20 px-3 py-2.5 rounded-xl text-sm outline-none text-center"
+           style="border: 1.5px solid var(--color-border);"
+           title="Порядок сортування">
+
+    <!-- Публікація -->
+    <label class="flex items-center gap-2 text-sm cursor-pointer px-3">
+      <input type="checkbox" name="is_visible" value="true"
+             {% if article and article.is_visible %}checked{% endif %}>
+      <span style="color: var(--color-text);">Опублікувати</span>
+    </label>
+
+    <!-- Save -->
+    <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-white text-sm font-semibold"
+            style="background: var(--color-primary);"
+            onmouseover="this.style.background='var(--color-primary-dark)'"
+            onmouseout="this.style.background='var(--color-primary)'">
+      Зберегти
+    </button>
+  </div>
+
+  <!-- Split editor -->
+  <div class="grid grid-cols-2 gap-4">
+
+    <!-- Editor -->
+    <div class="editor-pane flex flex-col rounded-2xl overflow-hidden"
+         style="background: var(--color-surface); border: 1px solid var(--color-border);">
+      <div class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide"
+           style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);
+                  color: var(--color-text-muted);">
+        ✏️ Markdown редактор
+      </div>
+      <textarea
+        id="content"
+        name="content"
+        class="flex-1 w-full px-5 py-4 text-sm outline-none font-mono"
+        style="background: var(--color-surface); color: var(--color-text);
+               line-height: 1.6; border: none;"
+        placeholder="# Заголовок статті
+
+## Розділ
+
+Текст статті в **Markdown** форматі.
+
+- Пункт 1
+- Пункт 2
+
+| Колонка 1 | Колонка 2 |
+|-----------|-----------|
+| Значення  | Значення  |"
+        hx-post="/admin/docs/preview"
+        hx-trigger="keyup changed delay:600ms"
+        hx-target="#preview"
+        hx-swap="innerHTML"
+        hx-include="#content">{{ article.content if article else '' }}</textarea>
+    </div>
+
+    <!-- Preview -->
+    <div class="editor-pane flex flex-col rounded-2xl overflow-hidden"
+         style="background: var(--color-surface); border: 1px solid var(--color-border);">
+      <div class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide"
+           style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);
+                  color: var(--color-text-muted);">
+        👁 Попередній перегляд
+      </div>
+      <div id="preview"
+           class="flex-1 px-5 py-4 overflow-y-auto text-sm"
+           style="line-height: 1.6;">
+        {% if preview_html %}
+          {{ preview_html | safe }}
+        {% else %}
+          <p style="color: var(--color-text-muted);">
+            Почни писати — тут з'явиться попередній перегляд
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</form>
+{% endblock %}
