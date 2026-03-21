@@ -13,12 +13,14 @@ build/
 .venv/
 venv/
 env/
+claude/
+agents/
 
 # Environment variables — NEVER commit these
 .env
 .env.local
 .env.production
-
+.env.example 
 # Database
 *.db
 *.sqlite3
