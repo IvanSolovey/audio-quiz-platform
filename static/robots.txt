@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /docs/
+Allow: /
+
+# Платформа внутрішня — не індексувати
+User-agent: *
+Disallow: /

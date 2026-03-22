@@ -3,17 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}OSD{% endblock %} — Академія</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Primary Meta Tags -->
+    <title>{% block title %}OSD — Навчальна платформа{% endblock %}</title>
+    <meta name="title" content="{% block meta_title %}OSD — Навчальна платформа{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Внутрішня навчальна платформа OSD для стажерів. Аудіо-квізи, база знань та матеріали для навчання.{% endblock %}">
+    <meta name="keywords" content="OSD, навчання, стажери, аудіо квізи, база знань">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="author" content="OSD — Аутсорсинговий відділ збуту">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{% block og_url %}https://academy.osd24.com{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}OSD — Навчальна платформа{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Внутрішня навчальна платформа OSD для стажерів.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}/static/og-image.png{% endblock %}">
+    <meta property="og:locale" content="uk_UA">
+    <meta property="og:site_name" content="OSD Academy">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}OSD — Навчальна платформа{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Внутрішня навчальна платформа OSD.{% endblock %}">
+    <meta name="twitter:image" content="/static/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="shortcut icon" href="/static/favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#1A3A5C">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OSD Academy">
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- HTMX CDN -->
     <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
-
-    <!-- Google Fonts: Manrope для заголовків, Inter для тексту -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
       :root {

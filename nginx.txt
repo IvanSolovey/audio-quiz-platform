@@ -1,0 +1,75 @@
+server {
+    listen 80;
+    server_name _;
+
+    # ─── Security Headers ──────────────────────────────────────────────────────
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: https:;
+        media-src 'self' https:;
+        connect-src 'self';
+    " always;
+
+    # ─── Performance ───────────────────────────────────────────────────────────
+    client_max_body_size 55M;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/javascript application/javascript
+               application/json text/html application/xml;
+
+    # ─── Static files ──────────────────────────────────────────────────────────
+    location /static/ {
+        alias /opt/audio-quiz-platform/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options "nosniff";
+
+        # Аудіо файли — без кешування
+        location ~* \.(mp3|ogg|wav|m4a)$ {
+            expires 1d;
+            add_header Cache-Control "public";
+            add_header Accept-Ranges bytes;
+        }
+    }
+
+    # ─── Favicon ───────────────────────────────────────────────────────────────
+    location = /favicon.ico {
+        alias /opt/audio-quiz-platform/static/favicon-32x32.png;
+        expires 30d;
+        log_not_found off;
+        access_log off;
+    }
+
+    # ─── Robots & Sitemap ──────────────────────────────────────────────────────
+    location = /robots.txt {
+        proxy_pass http://127.0.0.1:8000;
+        access_log off;
+    }
+
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:8000;
+        access_log off;
+    }
+
+    # ─── App ───────────────────────────────────────────────────────────────────
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+        proxy_buffering on;
+        proxy_buffer_size 8k;
+        proxy_buffers 8 8k;
+    }
+}

@@ -49,7 +49,11 @@
       "Bash(nc -zv 176.9.9.115 3306)",
       "Bash(PYTHONPATH=/Users/user/Documents/audio-quiz-platform MANAGER_DB_HOST=176.9.9.115 MANAGER_DB_PORT=3306 MANAGER_DB_USER=root MANAGER_DB_PASSWORD='vid_Slack-Ware7&_do_Debian8!' MANAGER_DB_NAME=centerper MANAGER_INTEGRATION_ENABLED=true python /Users/user/Documents/audio-quiz-platform/scripts/debug_manager.py)",
       "Bash(PYTHONPATH=/Users/user/Documents/audio-quiz-platform MANAGER_DB_HOST=176.9.9.115 MANAGER_DB_PORT=3306 MANAGER_DB_USER=kroot MANAGER_DB_PASSWORD='Black_mysqL2_66' MANAGER_DB_NAME=centerper MANAGER_INTEGRATION_ENABLED=true python /Users/user/Documents/audio-quiz-platform/scripts/debug_manager.py)",
-      "Bash(alembic revision:*)"
+      "Bash(alembic revision:*)",
+      "Bash(.venv/bin/python -c \"import PIL\")",
+      "Bash(.venv/bin/python scripts/generate_icons.py)",
+      "Bash(find /Library/Fonts -name *Inter*Bold* -o -name *Manrope*Bold*)",
+      "Bash(ls:*)"
     ]
   }
 }
