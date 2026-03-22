@@ -60,3 +60,4 @@ agents/
 
 # Docker — don't commit local override files
 docker-compose.override.yml
+.env.example

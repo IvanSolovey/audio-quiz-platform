@@ -3,9 +3,11 @@ import uuid
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import require_user
+from app.models.result import QuizAttempt
 from app.models.user import User
 from app.services import quiz_service, result_service
 from app.services.knowledge_service import get_all_categories
@@ -51,10 +53,11 @@ async def quiz_page(
     # 1. Resume an in-progress attempt if one exists (no creation yet)
     in_progress = await result_service.get_in_progress_attempt(db, current_user.id, quiz_id)
     if in_progress:
+        questions = result_service.get_ordered_questions(in_progress, list(quiz.questions))
         answered_ids = await result_service.get_answered_question_ids(db, in_progress.id)
-        unanswered = [q for q in quiz.questions if q.id not in answered_ids]
+        unanswered = [q for q in questions if q.id not in answered_ids]
         if not unanswered:
-            completed = await result_service.complete_attempt(db, in_progress.id)
+            await result_service.complete_attempt(db, in_progress.id)
             await db.commit()
             return RedirectResponse(f"/quiz/{quiz_id}/result/{in_progress.id}", status_code=303)
         return templates.TemplateResponse("trainee/quiz.html", {
@@ -63,7 +66,7 @@ async def quiz_page(
             "question": unanswered[0],
             "attempt_id": str(in_progress.id),
             "progress": len(answered_ids),
-            "total": len(quiz.questions),
+            "total": len(questions),
             "user": current_user,
         })
 
@@ -82,16 +85,21 @@ async def quiz_page(
             "user": current_user,
         })
 
-    # 3. First time — create attempt and start
-    attempt = await result_service.start_attempt(db, current_user.id, quiz_id)
+    # 3. First time — create attempt with shuffled order if enabled, then start
+    attempt = await result_service.start_attempt(
+        db, current_user.id, quiz_id,
+        questions=list(quiz.questions),
+        shuffle=quiz.shuffle_questions,
+    )
     await db.commit()
+    questions = result_service.get_ordered_questions(attempt, list(quiz.questions))
     return templates.TemplateResponse("trainee/quiz.html", {
         "request": request,
         "quiz": quiz,
-        "question": quiz.questions[0],
+        "question": questions[0],
         "attempt_id": str(attempt.id),
         "progress": 0,
-        "total": len(quiz.questions),
+        "total": len(questions),
         "user": current_user,
     })
 
@@ -107,15 +115,20 @@ async def start_quiz(
     if not quiz or not quiz.is_published:
         return RedirectResponse("/dashboard", status_code=303)
 
-    attempt = await result_service.start_attempt(db, current_user.id, quiz_id)
+    attempt = await result_service.start_attempt(
+        db, current_user.id, quiz_id,
+        questions=list(quiz.questions),
+        shuffle=quiz.shuffle_questions,
+    )
     await db.commit()
+    questions = result_service.get_ordered_questions(attempt, list(quiz.questions))
     return templates.TemplateResponse("trainee/quiz.html", {
         "request": request,
         "quiz": quiz,
-        "question": quiz.questions[0],
+        "question": questions[0],
         "attempt_id": str(attempt.id),
         "progress": 0,
-        "total": len(quiz.questions),
+        "total": len(questions),
         "user": current_user,
     })
 
@@ -142,8 +155,11 @@ async def submit_answer(
 
     # Знайти наступне питання
     quiz = await quiz_service.get_quiz_with_questions(db, quiz_id)
+    attempt_row = await db.execute(select(QuizAttempt).where(QuizAttempt.id == attempt_uuid))
+    attempt_obj = attempt_row.scalar_one_or_none()
     answered_ids = await result_service.get_answered_question_ids(db, attempt_uuid)
-    unanswered = [q for q in quiz.questions if q.id not in answered_ids]
+    questions = result_service.get_ordered_questions(attempt_obj, list(quiz.questions)) if attempt_obj else list(quiz.questions)
+    unanswered = [q for q in questions if q.id not in answered_ids]
 
     if not unanswered:
         # Квіз завершено
@@ -158,7 +174,7 @@ async def submit_answer(
     # Повернути фрагмент наступного питання
     next_question = unanswered[0]
     progress = len(answered_ids)
-    total = len(quiz.questions)
+    total = len(questions)
 
     return templates.TemplateResponse("partials/question.html", {
         "request": request,
@@ -180,8 +196,6 @@ async def quiz_result(
     current_user: User = Depends(require_user),
 ):
     from sqlalchemy.orm import selectinload
-    from sqlalchemy import select
-    from app.models.result import QuizAttempt
 
     result = await db.execute(
         select(QuizAttempt)

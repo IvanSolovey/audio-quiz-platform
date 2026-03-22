@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, Integer, ForeignKey, DateTime, func
+from sqlalchemy import Boolean, Integer, ForeignKey, DateTime, func, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -23,6 +23,10 @@ class QuizAttempt(Base):
         DateTime(timezone=True), nullable=True
     )
     score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    question_order: Mapped[str | None] = mapped_column(
+        Text, nullable=True,
+        comment="JSON array of question UUIDs in shuffled order for this attempt"
+    )
 
     # Relationships
     user: Mapped[User] = relationship(back_populates="attempts", lazy="raise")

@@ -117,6 +117,7 @@ async def update_quiz(
     title: str = Form(...),
     description: str = Form(""),
     is_published: bool = Form(False),
+    shuffle_questions: bool = Form(False),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_permission("manage_quizzes")),
 ):
@@ -128,6 +129,7 @@ async def update_quiz(
     quiz.title = title.strip()
     quiz.description = description.strip() or None
     quiz.is_published = is_published
+    quiz.shuffle_questions = shuffle_questions
     await db.commit()
 
     request.session["flash"] = {"type": "success", "message": "Збережено!"}
@@ -228,6 +230,88 @@ async def add_question(
 
     await db.commit()
     request.session["flash"] = {"type": "success", "message": "Питання додано!"}
+    return RedirectResponse(f"/admin/quiz/{quiz_id}", status_code=303)
+
+
+@router.post("/quiz/{quiz_id}/question/{question_id}/duplicate")
+async def duplicate_question(
+    request: Request,
+    quiz_id: uuid.UUID,
+    question_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_permission("manage_quizzes")),
+):
+    result = await db.execute(
+        select(Question)
+        .where(Question.id == question_id)
+        .options(selectinload(Question.options))
+    )
+    original = result.scalar_one_or_none()
+    if not original:
+        raise HTTPException(status_code=404)
+
+    new_question = Question(
+        quiz_id=quiz_id,
+        text=original.text,
+        audio_url=original.audio_url,
+        audio_key=original.audio_key,
+        order_index=original.order_index + 1,
+    )
+    db.add(new_question)
+    await db.flush()
+
+    for option in original.options:
+        db.add(AnswerOption(
+            question_id=new_question.id,
+            text=option.text,
+            is_correct=option.is_correct,
+        ))
+
+    await db.commit()
+    request.session["flash"] = {"type": "success", "message": "Питання скопійовано!"}
+    return RedirectResponse(f"/admin/quiz/{quiz_id}", status_code=303)
+
+
+@router.post("/quiz/{quiz_id}/question/{question_id}/update")
+async def update_question(
+    request: Request,
+    quiz_id: uuid.UUID,
+    question_id: uuid.UUID,
+    text: str = Form(...),
+    option_1: str = Form(...),
+    option_2: str = Form(...),
+    option_3: str = Form(""),
+    option_4: str = Form(""),
+    correct_option: int = Form(...),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_permission("manage_quizzes")),
+):
+    result = await db.execute(
+        select(Question)
+        .where(Question.id == question_id)
+        .options(selectinload(Question.options))
+    )
+    question = result.scalar_one_or_none()
+    if not question:
+        raise HTTPException(status_code=404)
+
+    question.text = text.strip()
+
+    for opt in list(question.options):
+        await db.delete(opt)
+    await db.flush()
+
+    for idx, opt_text in enumerate([option_1, option_2, option_3, option_4], start=1):
+        if not opt_text.strip():
+            continue
+        db.add(AnswerOption(
+            question_id=question_id,
+            text=opt_text.strip(),
+            is_correct=(idx == correct_option),
+        ))
+
+    await db.commit()
+    request.session["flash"] = {"type": "success", "message": "Питання оновлено!"}
     return RedirectResponse(f"/admin/quiz/{quiz_id}", status_code=303)
 
 

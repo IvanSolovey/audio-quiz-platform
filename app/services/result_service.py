@@ -1,4 +1,6 @@
 from __future__ import annotations
+import json
+import random
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import select, func
@@ -10,7 +12,11 @@ from app.models.user import User
 
 
 async def start_attempt(
-    db: AsyncSession, user_id: uuid.UUID, quiz_id: uuid.UUID
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quiz_id: uuid.UUID,
+    questions: list | None = None,
+    shuffle: bool = False,
 ) -> QuizAttempt:
     # Перевірити чи є незавершена спроба
     existing = await db.execute(
@@ -24,11 +30,32 @@ async def start_attempt(
     if attempt:
         return attempt
 
-    attempt = QuizAttempt(user_id=user_id, quiz_id=quiz_id)
+    question_order = None
+    if questions and shuffle:
+        shuffled = list(questions)
+        random.shuffle(shuffled)
+        question_order = json.dumps([str(q.id) for q in shuffled])
+
+    attempt = QuizAttempt(user_id=user_id, quiz_id=quiz_id, question_order=question_order)
     db.add(attempt)
     await db.flush()
     await db.refresh(attempt)
     return attempt
+
+
+def get_ordered_questions(attempt: QuizAttempt, questions: list) -> list:
+    """Return questions in the order stored on this attempt, falling back to natural order."""
+    if not attempt.question_order:
+        return list(questions)
+    id_order = json.loads(attempt.question_order)
+    id_map = {str(q.id): q for q in questions}
+    ordered = [id_map[qid] for qid in id_order if qid in id_map]
+    # Append any questions added to the quiz after the attempt was started
+    stored_set = set(id_order)
+    for q in questions:
+        if str(q.id) not in stored_set:
+            ordered.append(q)
+    return ordered
 
 
 async def save_answer(

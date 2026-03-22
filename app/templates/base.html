@@ -117,7 +117,7 @@
 <body class="min-h-screen flex flex-col">
 
     <!-- Навігація -->
-    <nav style="background: var(--color-primary); box-shadow: var(--shadow-md);">
+    <nav style="background: var(--color-primary); box-shadow: var(--shadow-md); position: relative;">
         <div class="max-w-6xl mx-auto px-6 py-0">
             <div class="flex items-center justify-between h-16">
 
@@ -129,8 +129,13 @@
                     </div>
                 </a>
 
-                <!-- Nav links -->
-                <div class="flex items-center gap-2 text-sm">
+                <!-- Nav links + hamburger -->
+                <div class="flex items-center gap-2">
+
+                  <!-- Desktop menu (hidden on mobile, flex on sm+) -->
+                  <div id="nav-menu"
+                       class="hidden sm:flex items-center gap-2 text-sm"
+                       style="background: var(--color-primary);">
                     {% if request.state.user %}
                         <span style="color: rgba(255,255,255,0.7);" class="text-sm hidden sm:block">
                             {{ request.state.user.name }}
@@ -146,7 +151,7 @@
                             <a href="/dashboard"
                                class="px-3 py-1.5 rounded-lg text-white text-sm transition-all"
                                style="background: rgba(255,255,255,0.08);">
-                               🏡 Головна 
+                               🏡 Головна
                             </a>
                             <a href="/docs"
                                class="px-3 py-1.5 rounded-lg text-white text-sm transition-all"
@@ -168,6 +173,31 @@
                             </button>
                         </form>
                     {% endif %}
+                  </div>
+
+                  <!-- Mobile hamburger button (hidden on sm+) -->
+                  {% if request.state.user %}
+                  <button id="nav-toggle"
+                          class="sm:hidden p-2 rounded-lg text-white text-lg leading-none"
+                          style="background: rgba(255,255,255,0.1);"
+                          onclick="
+                            var m = document.getElementById('nav-menu');
+                            m.classList.toggle('hidden');
+                            m.classList.toggle('flex');
+                            m.classList.toggle('flex-col');
+                            m.classList.toggle('absolute');
+                            m.classList.toggle('top-16');
+                            m.classList.toggle('right-0');
+                            m.classList.toggle('p-4');
+                            m.classList.toggle('rounded-xl');
+                            m.classList.toggle('z-50');
+                            m.classList.toggle('shadow-lg');
+                          "
+                          aria-label="Відкрити меню">
+                    ☰
+                  </button>
+                  {% endif %}
+
                 </div>
 
             </div>
