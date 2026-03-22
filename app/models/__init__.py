@@ -3,6 +3,10 @@ from app.models.quiz import Quiz, Question, AnswerOption
 from app.models.result import QuizAttempt, AttemptAnswer
 from app.models.knowledge import Category, Article
 from app.models.announcement import Announcement, AnnouncementRead
+from app.models.onboarding import (
+    OnboardingTrack, TrackStage, StageItem,
+    UserTrack, UserItemProgress,
+)
 
 __all__ = [
     "User", "AdminPermission",
@@ -10,4 +14,6 @@ __all__ = [
     "QuizAttempt", "AttemptAnswer",
     "Category", "Article",
     "Announcement", "AnnouncementRead",
+    "OnboardingTrack", "TrackStage", "StageItem",
+    "UserTrack", "UserItemProgress",
 ]

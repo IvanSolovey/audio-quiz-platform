@@ -12,6 +12,7 @@ from app.routers import (
     auth, trainee, admin, docs,
     admin_docs, admin_permissions,
     announcements, admin_announcements,
+    onboarding, admin_onboarding,
 )
 
 
@@ -42,6 +43,8 @@ app.include_router(admin_docs.router)
 app.include_router(admin_permissions.router)
 app.include_router(announcements.router)
 app.include_router(admin_announcements.router)
+app.include_router(onboarding.router)
+app.include_router(admin_onboarding.router)
 
 
 @app.get("/")

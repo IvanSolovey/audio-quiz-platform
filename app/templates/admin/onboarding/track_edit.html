@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}{{ track.title }} — Редагування{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-8">
+  <a href="/admin/onboarding" class="text-sm hover:underline"
+     style="color: var(--color-text-muted);">← Онбординг</a>
+  <h1 class="text-2xl font-bold" style="font-family: var(--font-display);">
+    🗺 {{ track.title }}
+  </h1>
+  <span class="text-sm px-2.5 py-1 rounded-lg"
+        style="background: #EEF4FF; color: var(--color-primary);">
+    {{ track.position_name }}
+  </span>
+</div>
+
+<div class="grid grid-cols-3 gap-6">
+
+  <!-- Stages list -->
+  <div class="col-span-2 space-y-4">
+
+    {% for stage in track.stages %}
+    <div class="rounded-2xl overflow-hidden"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+
+      <!-- Stage header -->
+      <div class="flex items-center justify-between px-6 py-4"
+           style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);">
+        <div>
+          <p class="font-bold" style="font-family: var(--font-display);">
+            {{ loop.index }}. {{ stage.title }}
+          </p>
+          {% if stage.description %}
+          <p class="text-xs mt-0.5" style="color: var(--color-text-muted);">
+            {{ stage.description }}
+          </p>
+          {% endif %}
+        </div>
+        <form action="/admin/onboarding/track/{{ track.id }}/stage/{{ stage.id }}/delete"
+              method="post"
+              onsubmit="return confirm('Видалити етап?')">
+          <button type="submit" class="text-xs px-3 py-1.5 rounded-lg"
+                  style="color: var(--color-error); border: 1px solid #FECACA;">
+            Видалити
+          </button>
+        </form>
+      </div>
+
+      <!-- Items -->
+      <div class="divide-y" style="border-color: var(--color-border);">
+        {% for item in stage.items %}
+        <div class="flex items-center justify-between px-6 py-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">
+              {% if item.item_type == 'article' %}📖
+              {% elif item.item_type == 'quiz' %}🎧
+              {% elif item.item_type == 'checklist' %}✅
+              {% elif item.item_type == 'url' %}🔗
+              {% endif %}
+            </span>
+            <span class="text-sm font-medium">{{ item.title }}</span>
+            {% if not item.is_required %}
+            <span class="text-xs px-1.5 py-0.5 rounded"
+                  style="background: #F1F5F9; color: var(--color-text-muted);">
+              необов'язково
+            </span>
+            {% endif %}
+          </div>
+          <form action="/admin/onboarding/track/{{ track.id }}/stage/{{ stage.id }}/item/{{ item.id }}/delete"
+                method="post"
+                onsubmit="return confirm('Видалити елемент?')">
+            <button type="submit" class="text-xs px-2 py-1 rounded"
+                    style="color: var(--color-error);">✕</button>
+          </form>
+        </div>
+        {% else %}
+        <p class="px-6 py-4 text-sm" style="color: var(--color-text-muted);">
+          Елементів ще немає
+        </p>
+        {% endfor %}
+      </div>
+
+      <!-- Add item form -->
+      <div class="px-6 py-4" style="border-top: 1px solid var(--color-border); background: var(--color-bg);">
+        <p class="text-xs font-semibold mb-3" style="color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+          Додати елемент
+        </p>
+        <form action="/admin/onboarding/track/{{ track.id }}/stage/{{ stage.id }}/item/add"
+              method="post" class="space-y-3" id="add-item-form-{{ stage.id }}">
+          <div class="grid grid-cols-2 gap-3">
+            <input type="text" name="title" required placeholder="Назва елементу"
+                   class="px-3 py-2 rounded-lg text-sm outline-none col-span-2"
+                   style="border: 1px solid var(--color-border);">
+            <select name="item_type" required
+                    class="px-3 py-2 rounded-lg text-sm outline-none"
+                    style="border: 1px solid var(--color-border);"
+                    onchange="showItemFields(this, '{{ stage.id }}')">
+              <option value="">Тип...</option>
+              <option value="article">📖 Стаття</option>
+              <option value="quiz">🎧 Квіз</option>
+              <option value="checklist">✅ Чекліст</option>
+              <option value="url">🔗 Посилання</option>
+            </select>
+            <label class="flex items-center gap-2 text-sm" style="color: var(--color-text-muted);">
+              <input type="checkbox" name="is_required" value="true" checked class="rounded">
+              Обов'язковий
+            </label>
+          </div>
+          <textarea name="description" rows="1" placeholder="Опис (необов'язково)"
+                    class="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                    style="border: 1px solid var(--color-border);"></textarea>
+
+          <!-- Article select -->
+          <div id="field-article-{{ stage.id }}" class="hidden">
+            <select name="article_id"
+                    class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style="border: 1px solid var(--color-border);">
+              <option value="">Обери статтю...</option>
+              {% for article in articles %}
+              <option value="{{ article.id }}">{{ article.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Quiz select -->
+          <div id="field-quiz-{{ stage.id }}" class="hidden">
+            <select name="quiz_id"
+                    class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style="border: 1px solid var(--color-border);">
+              <option value="">Обери квіз...</option>
+              {% for quiz in quizzes %}
+              <option value="{{ quiz.id }}">{{ quiz.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- URL input -->
+          <div id="field-url-{{ stage.id }}" class="hidden">
+            <input type="url" name="external_url" placeholder="https://..."
+                   class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                   style="border: 1px solid var(--color-border);">
+          </div>
+
+          <!-- Checklist textarea -->
+          <div id="field-checklist-{{ stage.id }}" class="hidden">
+            <textarea name="checklist_text" rows="3"
+                      placeholder="Кожен рядок — окремий пункт"
+                      class="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                      style="border: 1px solid var(--color-border);"></textarea>
+          </div>
+
+          <button type="submit"
+                  class="w-full py-2 rounded-lg text-white text-sm font-semibold"
+                  style="background: var(--color-primary);">
+            Додати елемент
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="text-center py-12 rounded-2xl"
+         style="background: var(--color-surface); border: 1px solid var(--color-border);">
+      <p class="text-3xl mb-3">📋</p>
+      <p style="color: var(--color-text-muted);">Етапів ще немає. Додайте перший!</p>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="space-y-4">
+
+    <!-- Add stage -->
+    <div class="rounded-2xl p-5"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-sm);">
+      <h2 class="font-bold text-sm mb-4" style="font-family: var(--font-display);">
+        Додати етап
+      </h2>
+      <form action="/admin/onboarding/track/{{ track.id }}/stage/add"
+            method="post" class="space-y-3">
+        <input type="text" name="title" required placeholder="Назва етапу"
+               class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+               style="border: 1px solid var(--color-border);">
+        <textarea name="description" rows="2" placeholder="Опис (необов'язково)"
+                  class="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                  style="border: 1px solid var(--color-border);"></textarea>
+        <button type="submit"
+                class="w-full py-2 rounded-lg text-white text-sm font-semibold"
+                style="background: var(--color-primary);">
+          Додати етап
+        </button>
+      </form>
+    </div>
+
+    <!-- Track info -->
+    {% if track.description %}
+    <div class="rounded-2xl p-5"
+         style="background: var(--color-surface);
+                border: 1px solid var(--color-border);">
+      <p class="text-xs font-semibold mb-2" style="color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+        Опис програми
+      </p>
+      <p class="text-sm" style="color: var(--color-text-muted);">
+        {{ track.description }}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+function showItemFields(select, stageId) {
+  const type = select.value;
+  ['article', 'quiz', 'url', 'checklist'].forEach(t => {
+    const el = document.getElementById(`field-${t}-${stageId}`);
+    if (el) el.classList.add('hidden');
+  });
+  if (type) {
+    const el = document.getElementById(`field-${type}-${stageId}`);
+    if (el) el.classList.remove('hidden');
+  }
+}
+</script>
+{% endblock %}

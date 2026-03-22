@@ -207,13 +207,52 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
-                    Аудіофайл (mp3, wav, ogg, m4a — до 50 МБ)
+                <label class="block text-sm font-medium mb-2" style="color: var(--color-text);">
+                    Аудіо
                 </label>
-                <input type="file" name="audio_file" required
-                       accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a"
-                       class="w-full text-sm"
-                       style="color: var(--color-text-muted);">
+
+                <!-- Toggle buttons -->
+                <div class="flex gap-2 mb-3">
+                    <button type="button" id="btn-upload" onclick="showUpload()"
+                            class="px-3 py-1.5 text-xs rounded-lg font-medium transition-all"
+                            style="background: var(--color-primary); color: white;">
+                        📁 Завантажити файл
+                    </button>
+                    <button type="button" id="btn-url" onclick="showUrl()"
+                            class="px-3 py-1.5 text-xs rounded-lg font-medium transition-all"
+                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                        🔗 Зовнішнє посилання
+                    </button>
+                </div>
+
+                <!-- File upload -->
+                <div id="audio-upload">
+                    <input type="file" name="audio_file"
+                           accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a,audio/*"
+                           class="w-full text-sm"
+                           style="color: var(--color-text-muted);">
+                    <p class="text-xs mt-1" style="color: var(--color-text-muted);">mp3, wav, ogg, m4a — до 50 МБ</p>
+                </div>
+
+                <!-- External URL -->
+                <div id="audio-url" class="hidden">
+                    <input type="url" name="audio_url_external"
+                           placeholder="https://example.com/audio/file.mp3"
+                           class="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all"
+                           style="border: 1.5px solid var(--color-border); background: var(--color-surface);
+                                  font-family: var(--font-body);"
+                           onfocus="this.style.borderColor='var(--color-primary)'"
+                           onblur="this.style.borderColor='var(--color-border)'"
+                           id="audio-url-input">
+                    <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+                        Підтримуються mp3, wav, ogg. Файл повинен бути публічно доступний.
+                    </p>
+                    <!-- Live preview -->
+                    <div id="url-preview" class="hidden mt-2 p-3 rounded-xl"
+                         style="background: var(--color-bg); border: 1px solid var(--color-border);">
+                        <audio id="preview-player" controls class="w-full" preload="none"></audio>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -274,6 +313,39 @@
 
 {% block extra_scripts %}
 <script>
+// ─── Audio source toggle ──────────────────────────────────────────────────────
+function showUpload() {
+    document.getElementById('audio-upload').classList.remove('hidden');
+    document.getElementById('audio-url').classList.add('hidden');
+    document.getElementById('btn-upload').style.cssText = 'background: var(--color-primary); color: white;';
+    document.getElementById('btn-url').style.cssText = 'background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);';
+}
+
+function showUrl() {
+    document.getElementById('audio-upload').classList.add('hidden');
+    document.getElementById('audio-url').classList.remove('hidden');
+    document.getElementById('btn-url').style.cssText = 'background: var(--color-primary); color: white;';
+    document.getElementById('btn-upload').style.cssText = 'background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var urlInput = document.getElementById('audio-url-input');
+    if (urlInput) {
+        urlInput.addEventListener('input', function () {
+            var url = this.value.trim();
+            var preview = document.getElementById('url-preview');
+            var player  = document.getElementById('preview-player');
+            if (url) {
+                player.src = url;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        });
+    }
+});
+
+// ─── Answer options ───────────────────────────────────────────────────────────
 (function () {
     const MAX_OPTIONS = 6;
     const BORDER = 'var(--color-border)';

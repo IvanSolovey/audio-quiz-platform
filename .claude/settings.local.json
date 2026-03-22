@@ -53,7 +53,10 @@
       "Bash(.venv/bin/python -c \"import PIL\")",
       "Bash(.venv/bin/python scripts/generate_icons.py)",
       "Bash(find /Library/Fonts -name *Inter*Bold* -o -name *Manrope*Bold*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python:*)",
+      "Bash(python3 -c \"from app.services.onboarding_service import get_user_track; print\\(''OK''\\)\")",
+      "Bash(python3 -c \"from app.main import app; print\\(''OK''\\)\")"
     ]
   }
 }

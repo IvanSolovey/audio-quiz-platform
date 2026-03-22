@@ -15,6 +15,9 @@ from app.services.auth_service import create_user, get_user_by_email
 from app.services.quiz_service import get_quiz_with_questions
 from app.services import audio_service
 from app.services.result_service import get_all_trainees_with_stats, get_trainee_statistics
+from app.services.onboarding_service import (
+    get_user_track, get_completed_item_ids, calculate_stage_progress
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -164,7 +167,8 @@ async def delete_quiz(
 async def add_question(
     request: Request,
     quiz_id: uuid.UUID,
-    audio_file: UploadFile = File(...),
+    audio_file: UploadFile | None = File(None),
+    audio_url_external: str = Form(""),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_permission("manage_quizzes")),
 ):
@@ -200,13 +204,23 @@ async def add_question(
     if not quiz:
         raise HTTPException(status_code=404)
 
-    # Завантажити аудіо
+    # Визначити джерело аудіо
     question_id = uuid.uuid4()
-    audio_url, audio_key = await audio_service.upload_audio(
-        file=audio_file,
-        quiz_id=quiz_id,
-        question_id=question_id,
-    )
+    if audio_url_external.strip():
+        audio_url = audio_url_external.strip()
+        audio_key = f"external:{audio_url}"
+    elif audio_file and audio_file.filename:
+        audio_url, audio_key = await audio_service.upload_audio(
+            file=audio_file,
+            quiz_id=quiz_id,
+            question_id=question_id,
+        )
+    else:
+        request.session["flash"] = {
+            "type": "error",
+            "message": "Додайте аудіо файл або вкажіть посилання",
+        }
+        return RedirectResponse(f"/admin/quiz/{quiz_id}", status_code=303)
 
     # Створити питання
     question = Question(
@@ -325,7 +339,8 @@ async def delete_question(
     result = await db.execute(select(Question).where(Question.id == question_id))
     question = result.scalar_one_or_none()
     if question:
-        await audio_service.delete_audio(question.audio_key)
+        if not question.audio_key.startswith("external:"):
+            await audio_service.delete_audio(question.audio_key)
         await db.delete(question)
         await db.commit()
 
@@ -364,10 +379,26 @@ async def trainee_profile(
         raise HTTPException(status_code=404, detail="Стажиста не знайдено")
 
     stats = await get_trainee_statistics(db, user_id)
+
+    user_track = await get_user_track(db, user_id)
+    completed_ids: set = set()
+    onboarding_stages_progress = []
+    if user_track:
+        completed_ids = await get_completed_item_ids(db, user_track.id)
+        for stage in user_track.track.stages:
+            prog = calculate_stage_progress(stage, completed_ids)
+            onboarding_stages_progress.append({
+                "stage": stage,
+                "progress": prog,
+            })
+
     return templates.TemplateResponse("admin/trainee_profile.html", {
         "request": request,
         "trainee": trainee,
         "stats": stats,
+        "user_track": user_track,
+        "completed_ids": completed_ids,
+        "onboarding_stages_progress": onboarding_stages_progress,
         "user": admin,
     })
 

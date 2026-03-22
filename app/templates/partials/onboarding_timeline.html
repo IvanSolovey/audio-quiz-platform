@@ -1,0 +1,368 @@
+{% if not user_track %}
+<div class="mb-8 rounded-2xl px-6 py-10 text-center"
+     style="background: var(--color-surface);
+            border: 1.5px dashed var(--color-border);">
+  <p class="text-3xl mb-3">🗺</p>
+  <p class="font-semibold mb-1" style="color: var(--color-text);">
+    Програму онбордингу ще не призначено
+  </p>
+  <p class="text-sm" style="color: var(--color-text-muted);">
+    Зверніться до керівника — він призначить вам програму онбордингу
+  </p>
+</div>
+{% else %}
+{% set track = user_track.track %}
+
+<style>
+  @keyframes ob-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(26,58,92,0.15); }
+    50%       { box-shadow: 0 0 0 8px rgba(26,58,92,0.08); }
+  }
+  @keyframes ob-celebrate {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.25); }
+    60%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  .ob-pulse      { animation: ob-pulse 2s ease-in-out infinite; }
+  .ob-celebrate  { animation: ob-celebrate 0.5s ease-out; }
+  .ob-transition { transition: all 0.25s ease; }
+</style>
+
+<div class="mb-8">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700;">
+      🗺 Програма онбордингу
+    </h2>
+    <span class="text-sm px-3 py-1 rounded-lg"
+          style="background: #EEF4FF; color: var(--color-primary); font-weight: 500;">
+      {{ track.position_name }}
+    </span>
+  </div>
+
+  {# ── Pre-compute stage states so both nav UIs share the same logic ── #}
+  {% set ns = namespace(prev_complete=true) %}
+  {% set stages_info = [] %}
+  {% for stage in track.stages %}
+    {% set prog       = calculate_stage_progress(stage, completed_ids) %}
+    {% set is_locked  = not ns.prev_complete %}
+    {% set is_complete = prog.is_complete %}
+    {% set is_active   = not is_complete and not is_locked %}
+    {% set _ = stages_info.append({
+        "stage": stage,
+        "prog": prog,
+        "is_locked": is_locked,
+        "is_complete": is_complete,
+        "is_active": is_active,
+        "index": loop.index,
+        "index0": loop.index0,
+        "last": loop.last
+    }) %}
+    {% set ns.prev_complete = is_complete %}
+  {% endfor %}
+
+  {# ════════════════════════════════════════════════════
+     MOBILE — vertical stepper (shown below sm breakpoint)
+     ════════════════════════════════════════════════════ #}
+  <div class="sm:hidden mb-6">
+    {% for s in stages_info %}
+    <div class="flex gap-3">
+
+      {# Left column: circle + connector line #}
+      <div class="flex flex-col items-center flex-shrink-0" style="width: 40px;">
+
+        {# Circle #}
+        {% if s.is_locked %}
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm ob-transition flex-shrink-0"
+             style="background: #E2E8F0; color: #94A3B8; cursor: not-allowed; opacity: 0.6;">
+          🔒
+        </div>
+        {% elif s.is_complete %}
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ob-transition flex-shrink-0 cursor-pointer"
+             style="background: var(--color-success); color: white;"
+             onclick="showStage({{ s.index0 }})">
+          ✓
+        </div>
+        {% else %}
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ob-pulse flex-shrink-0 cursor-pointer"
+             style="background: var(--color-primary); color: white; margin: -2px;"
+             onclick="showStage({{ s.index0 }})">
+          {{ s.index }}
+        </div>
+        {% endif %}
+
+        {# Connector line down (not after last) #}
+        {% if not s.last %}
+        <div class="flex-1 ob-transition"
+             style="width: 2px;
+                    margin-top: 4px;
+                    margin-bottom: 4px;
+                    background: {% if s.is_complete %}var(--color-success){% elif s.is_active %}linear-gradient(to bottom, var(--color-primary), #E2E8F0){% else %}#E2E8F0{% endif %};
+                    {% if not s.is_complete and not s.is_active %}border-left: 2px dashed #E2E8F0; width: 0; background: none;{% endif %}
+                    min-height: 28px;">
+        </div>
+        {% endif %}
+      </div>
+
+      {# Right column: title + status #}
+      <div class="flex-1 pb-{% if s.last %}0{% else %}5{% endif %} pt-1">
+        {% if s.is_locked %}
+        <p class="text-sm font-medium" style="color: #94A3B8;">{{ s.stage.title }}</p>
+        <p class="text-xs mt-0.5" style="color: #94A3B8;">Заблоковано</p>
+        {% elif s.is_complete %}
+        <p class="text-sm font-medium cursor-pointer hover:underline"
+           style="color: var(--color-success);"
+           onclick="showStage({{ s.index0 }})">{{ s.stage.title }}</p>
+        <p class="text-xs mt-0.5" style="color: var(--color-success);">
+          Завершено · {{ s.prog.completed }}/{{ s.prog.total }}
+        </p>
+        {% else %}
+        <p class="text-sm font-bold cursor-pointer"
+           style="color: var(--color-primary);"
+           onclick="showStage({{ s.index0 }})">{{ s.stage.title }}</p>
+        <p class="text-xs mt-0.5" style="color: var(--color-text-muted);">
+          {{ s.prog.completed }}/{{ s.prog.total }} виконано
+        </p>
+        {# Mini progress bar #}
+        <div class="w-full h-1 rounded-full mt-1.5" style="background: var(--color-border);">
+          <div class="h-1 rounded-full ob-transition"
+               style="width: {{ s.prog.percent }}%; background: var(--color-accent);"></div>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ════════════════════════════════════════════════════
+     DESKTOP — horizontal timeline (hidden below sm)
+     ════════════════════════════════════════════════════ #}
+  <div class="hidden sm:flex items-center mb-7">
+    {% for s in stages_info %}
+
+      {% if s.is_locked %}
+      <!-- Locked node -->
+      <div class="relative group flex flex-col items-center flex-shrink-0"
+           style="min-width: 80px; opacity: 0.55;">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm ob-transition"
+             style="background: #E2E8F0; color: #94A3B8; cursor: not-allowed;">
+          🔒
+        </div>
+        <!-- Tooltip -->
+        <div class="absolute bottom-14 left-1/2 -translate-x-1/2 hidden group-hover:block z-10
+                    px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none"
+             style="background: var(--color-text); color: white; box-shadow: var(--shadow-md);">
+          Спочатку завершіть попередній етап
+          <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent"
+               style="border-top-color: var(--color-text);"></div>
+        </div>
+        <p class="text-xs text-center mt-2 leading-tight"
+           style="color: #94A3B8; max-width: 72px;">{{ s.stage.title }}</p>
+      </div>
+
+      {% elif s.is_complete %}
+      <!-- Complete node -->
+      <div class="flex flex-col items-center cursor-pointer flex-shrink-0 ob-transition"
+           onclick="showStage({{ s.index0 }})"
+           style="min-width: 80px;">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ob-transition"
+             style="background: var(--color-success); color: white;">✓</div>
+        <p class="text-xs text-center mt-2 leading-tight"
+           style="color: var(--color-success); font-weight: 500; max-width: 72px;">{{ s.stage.title }}</p>
+      </div>
+
+      {% else %}
+      <!-- Active node -->
+      <div class="flex flex-col items-center cursor-pointer flex-shrink-0"
+           onclick="showStage({{ s.index0 }})"
+           style="min-width: 80px;">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold ob-pulse ob-transition"
+             style="background: var(--color-primary); color: white;">{{ s.index }}</div>
+        <p class="text-xs text-center mt-2 leading-tight"
+           style="color: var(--color-primary); font-weight: 700; max-width: 72px;">{{ s.stage.title }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Connector -->
+      {% if not s.last %}
+        {% if s.is_complete %}
+        <div class="flex-1 h-0.5 mx-2 flex-shrink-0"
+             style="background: var(--color-success); min-width: 24px;"></div>
+        {% elif s.is_active %}
+        <div class="flex-1 h-0.5 mx-2 flex-shrink-0"
+             style="background: linear-gradient(to right, var(--color-primary), #E2E8F0); min-width: 24px;"></div>
+        {% else %}
+        <div class="flex-1 mx-2 flex-shrink-0"
+             style="height: 2px; min-width: 24px; border-top: 2px dashed #E2E8F0;"></div>
+        {% endif %}
+      {% endif %}
+
+    {% endfor %}
+  </div>
+
+  {# ════════════════════════════════════════════════════
+     Stage detail panels (shared by both layouts)
+     ════════════════════════════════════════════════════ #}
+  {% set ns2 = namespace(prev_complete=true, stage_count=track.stages|length) %}
+  {% for stage in track.stages %}
+    {% set prog       = calculate_stage_progress(stage, completed_ids) %}
+    {% set is_locked  = not ns2.prev_complete %}
+    {% set is_complete = prog.is_complete %}
+    {% set is_active   = not is_complete and not is_locked %}
+
+    {% set border_color = "var(--color-success)" if is_complete else "var(--color-primary)" if is_active else "var(--color-border)" %}
+    {% set header_bg    = "var(--color-success-bg)" if is_complete else "#EEF4FF" if is_active else "var(--color-bg)" %}
+
+    <div id="stage-detail-{{ loop.index0 }}"
+         class="rounded-2xl overflow-hidden ob-transition
+                {% if is_complete %}hidden{% elif not is_active %}hidden{% endif %}"
+         style="background: var(--color-surface);
+                border: 1.5px solid {{ border_color }};
+                box-shadow: var(--shadow-sm);">
+
+      <!-- Panel header -->
+      <div class="px-5 py-4" style="background: {{ header_bg }}; border-bottom: 1px solid var(--color-border);">
+        <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="font-bold text-sm" style="font-family: var(--font-display);">
+              {{ stage.title }}
+            </p>
+            {% if is_complete %}
+            <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style="background: var(--color-success); color: white;">Завершено ✓</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center gap-2 text-xs flex-wrap" style="color: var(--color-text-muted);">
+            <span>Крок {{ loop.index }} з {{ ns2.stage_count }}</span>
+            <span>·</span>
+            <span>{{ prog.completed }}/{{ prog.total }}
+              {% if prog.total == 1 %}завдання{% elif prog.total < 5 %}завдання{% else %}завдань{% endif %}
+            </span>
+          </div>
+        </div>
+        {% if stage.description %}
+        <p class="text-xs mt-1" style="color: var(--color-text-muted);">{{ stage.description }}</p>
+        {% endif %}
+        <div class="w-full h-1.5 rounded-full mt-3" style="background: var(--color-border);">
+          <div class="h-1.5 rounded-full ob-transition"
+               style="width: {{ prog.percent }}%;
+                      background: {% if is_complete %}var(--color-success){% else %}var(--color-accent){% endif %};">
+          </div>
+        </div>
+      </div>
+
+      <!-- Items list -->
+      <div class="px-4 sm:px-5 py-4 space-y-2">
+        {% for item in stage.items %}
+        {% set is_done = item.id in completed_ids %}
+
+        <div class="flex items-start gap-3 p-3 rounded-xl ob-transition"
+             style="background: {% if is_done %}var(--color-success-bg){% else %}white{% endif %};
+                    border: 1px solid {% if is_done %}#BBF7D0{% else %}var(--color-border){% endif %};">
+
+          {% if not is_locked %}
+          <button
+            hx-post="/onboarding/item/{{ item.id }}/{% if is_done %}uncomplete{% else %}complete{% endif %}"
+            hx-target="#onboarding-container"
+            hx-swap="innerHTML"
+            class="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ob-transition"
+            style="background: {% if is_done %}var(--color-success){% else %}white{% endif %};
+                   border: 2px solid {% if is_done %}var(--color-success){% else %}var(--color-border){% endif %};
+                   cursor: pointer; min-width: 20px;">
+            {% if is_done %}<span class="text-white text-xs font-bold">✓</span>{% endif %}
+          </button>
+          {% else %}
+          <div class="w-5 h-5 rounded flex-shrink-0 mt-0.5"
+               style="background: var(--color-bg); border: 2px solid var(--color-border); min-width: 20px;"></div>
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm flex-shrink-0">
+                {% if item.item_type == 'article' %}📖
+                {% elif item.item_type == 'quiz' %}🎧
+                {% elif item.item_type == 'checklist' %}✅
+                {% elif item.item_type == 'url' %}🔗
+                {% endif %}
+              </span>
+              <span class="text-sm font-medium {% if is_done %}line-through{% endif %} ob-transition"
+                    style="color: {% if is_done %}var(--color-text-muted){% else %}var(--color-text){% endif %};">
+                {{ item.title }}
+              </span>
+              {% if not item.is_required %}
+              <span class="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
+                    style="background: #F1F5F9; color: var(--color-text-muted);">необов'язково</span>
+              {% endif %}
+            </div>
+
+            {% if item.description %}
+            <p class="text-xs mt-1" style="color: var(--color-text-muted);">{{ item.description }}</p>
+            {% endif %}
+
+            {% if item.item_type == 'checklist' %}
+            <ul class="mt-2 space-y-1">
+              {% for check in get_checklist_items(item) %}
+              <li class="text-xs flex items-start gap-1.5" style="color: var(--color-text-muted);">
+                <span class="flex-shrink-0">•</span> {{ check }}
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if not is_done %}
+            <div class="mt-2">
+              {% if item.item_type == 'article' and item.article %}
+              <a href="/docs/{{ item.article.category.slug }}/{{ item.article.slug }}"
+                 class="text-xs font-semibold hover:underline"
+                 style="color: var(--color-primary);">Читати статтю →</a>
+              {% elif item.item_type == 'quiz' and item.quiz %}
+              <a href="/quiz/{{ item.quiz_id }}"
+                 class="text-xs font-semibold hover:underline"
+                 style="color: var(--color-primary);">Пройти квіз →</a>
+              {% elif item.item_type == 'url' and item.external_url %}
+              <a href="{{ item.external_url }}" target="_blank"
+                 class="text-xs font-semibold hover:underline"
+                 style="color: var(--color-primary);">Відкрити посилання →</a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if is_active and prog.total > 0 %}
+        <div id="stage-complete-msg-{{ loop.index0 }}" class="hidden text-center py-4">
+          <p class="text-sm font-semibold" style="color: var(--color-success);">
+            Етап завершено! 🎉
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% set ns2.prev_complete = is_complete %}
+  {% endfor %}
+
+</div>
+
+<script>
+function showStage(index) {
+  document.querySelectorAll('[id^="stage-detail-"]').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById('stage-detail-' + index);
+  if (target) target.classList.remove('hidden');
+}
+
+(function () {
+  document.querySelectorAll('[id^="stage-detail-"]').forEach(panel => {
+    const msg = panel.querySelector('[id^="stage-complete-msg-"]');
+    if (!msg) return;
+    const bar = panel.querySelector('.ob-transition[style*="background: var(--color-success)"]');
+    if (bar && bar.style.width === '100%') {
+      msg.classList.remove('hidden');
+    }
+  });
+})();
+</script>
+{% endif %}

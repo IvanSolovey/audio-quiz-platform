@@ -124,6 +124,157 @@
     </div>
   </div>
 
+  <!-- Onboarding Progress -->
+  {% if user_track %}
+  <div class="mb-6 rounded-2xl overflow-hidden"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+
+    <div class="px-6 py-4 flex items-center justify-between"
+         style="border-bottom: 2px solid var(--color-border);
+                background: var(--color-bg);">
+      <div>
+        <h2 class="font-bold text-sm" style="font-family: var(--font-display);">
+          🗺 Програма онбордингу
+        </h2>
+        <p class="text-xs mt-0.5" style="color: var(--color-text-muted);">
+          {{ user_track.track.title }} · {{ user_track.track.position_name }}
+        </p>
+      </div>
+      <div>
+        {% set ns_ob = namespace(total_items=0, done_items=0) %}
+        {% for s in onboarding_stages_progress %}
+          {% set ns_ob.total_items = ns_ob.total_items + s.progress.total %}
+          {% set ns_ob.done_items = ns_ob.done_items + s.progress.completed %}
+        {% endfor %}
+        {% set overall_pct = (ns_ob.done_items / ns_ob.total_items * 100) | round | int if ns_ob.total_items > 0 else 0 %}
+        <div class="flex items-center gap-3">
+          <span class="text-2xl font-bold"
+                style="font-family: var(--font-display);
+                       color: {% if overall_pct == 100 %}var(--color-success){% elif overall_pct > 0 %}var(--color-primary){% else %}var(--color-text-muted){% endif %};">
+            {{ overall_pct }}%
+          </span>
+          <form action="/admin/onboarding/user/{{ trainee.id }}/unassign" method="post"
+                onsubmit="return confirm('Зняти програму онбордингу з {{ trainee.name }}? Весь прогрес буде видалено.')">
+            <button type="submit"
+                    class="text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style="color: var(--color-error);
+                           border: 1px solid #FECACA;
+                           background: var(--color-error-bg);">
+              Зняти програму
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overall progress bar -->
+    <div class="px-6 py-3" style="border-bottom: 1px solid var(--color-border);">
+      <div class="flex items-center gap-3">
+        <div class="flex-1 h-2 rounded-full" style="background: var(--color-border);">
+          <div class="h-2 rounded-full transition-all"
+               style="width: {{ overall_pct }}%;
+                      background: {% if overall_pct == 100 %}var(--color-success){% else %}var(--color-accent){% endif %};">
+          </div>
+        </div>
+        <span class="text-xs font-medium" style="color: var(--color-text-muted);">
+          {{ ns_ob.done_items }}/{{ ns_ob.total_items }} завдань
+        </span>
+      </div>
+      <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+        Призначено: {{ user_track.assigned_at.strftime('%d.%m.%Y') }}
+        {% if user_track.assigner %} · {{ user_track.assigner.name }}{% endif %}
+      </p>
+    </div>
+
+    <!-- Stages breakdown -->
+    <div class="divide-y" style="border-color: var(--color-border);">
+      {% for item in onboarding_stages_progress %}
+      {% set stage = item.stage %}
+      {% set prog = item.progress %}
+      <div class="px-6 py-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                 style="background: {% if prog.is_complete %}var(--color-success){% else %}var(--color-bg){% endif %};
+                        border: 2px solid {% if prog.is_complete %}var(--color-success){% else %}var(--color-border){% endif %};
+                        color: {% if prog.is_complete %}white{% else %}var(--color-text-muted){% endif %};">
+              {% if prog.is_complete %}✓{% else %}○{% endif %}
+            </div>
+            <span class="text-sm font-semibold" style="font-family: var(--font-display);">
+              {{ stage.title }}
+            </span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-medium"
+                  style="color: {% if prog.is_complete %}var(--color-success){% elif prog.completed > 0 %}var(--color-accent){% else %}var(--color-text-muted){% endif %};">
+              {{ prog.completed }}/{{ prog.total }}
+            </span>
+            <a href="/admin/onboarding/user/{{ trainee.id }}"
+               class="text-xs hover:underline"
+               style="color: var(--color-primary);">
+              Керувати →
+            </a>
+          </div>
+        </div>
+
+        <!-- Stage progress bar -->
+        <div class="w-full h-1.5 rounded-full" style="background: var(--color-border);">
+          <div class="h-1.5 rounded-full transition-all"
+               style="width: {{ prog.percent }}%;
+                      background: {% if prog.is_complete %}var(--color-success){% else %}var(--color-accent){% endif %};">
+          </div>
+        </div>
+
+        <!-- Expandable items list -->
+        <div class="mt-2">
+          <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+                  class="text-xs flex items-center gap-1 hover:underline"
+                  style="color: var(--color-text-muted);">
+            <span>Деталі завдань</span> <span>▾</span>
+          </button>
+          <div class="hidden mt-2 space-y-1">
+            {% for stage_item in stage.items %}
+            {% set is_done = stage_item.id in completed_ids %}
+            <div class="flex items-center gap-2 text-xs py-1">
+              <span style="color: {% if is_done %}var(--color-success){% else %}var(--color-border){% endif %};">
+                {% if is_done %}✓{% else %}○{% endif %}
+              </span>
+              <span class="{% if is_done %}line-through{% endif %}"
+                    style="color: {% if is_done %}var(--color-text-muted){% else %}var(--color-text){% endif %};">
+                {{ stage_item.title }}
+              </span>
+              <span style="color: var(--color-text-muted);">
+                {% if stage_item.item_type == 'article' %}📖
+                {% elif stage_item.item_type == 'quiz' %}🎧
+                {% elif stage_item.item_type == 'checklist' %}✅
+                {% elif stage_item.item_type == 'url' %}🔗{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+  {% else %}
+  <div class="mb-6 p-5 rounded-2xl text-center"
+       style="background: var(--color-surface);
+              border: 1px dashed var(--color-border);">
+    <p class="text-sm" style="color: var(--color-text-muted);">
+      🗺 Програму онбордингу ще не призначено
+    </p>
+    <a href="/admin/onboarding"
+       class="text-xs mt-1 block hover:underline"
+       style="color: var(--color-primary);">
+      Призначити програму →
+    </a>
+  </div>
+  {% endif %}
+
   <!-- Quiz results with progress bars -->
   <div class="mb-6 rounded-2xl overflow-hidden"
        style="background: var(--color-surface);
@@ -215,6 +366,93 @@
   </div>
 
   {% else %}
+
+  <!-- Onboarding progress (empty-state branch) -->
+  {% if user_track %}
+  {% set ns_ob2 = namespace(total_items=0, done_items=0) %}
+  {% for s in onboarding_stages_progress %}
+    {% set ns_ob2.total_items = ns_ob2.total_items + s.progress.total %}
+    {% set ns_ob2.done_items = ns_ob2.done_items + s.progress.completed %}
+  {% endfor %}
+  {% set overall_pct2 = (ns_ob2.done_items / ns_ob2.total_items * 100) | round | int if ns_ob2.total_items > 0 else 0 %}
+  <div class="mb-6 rounded-2xl overflow-hidden"
+       style="background: var(--color-surface);
+              border: 1px solid var(--color-border);
+              box-shadow: var(--shadow-sm);">
+    <div class="px-6 py-4 flex items-center justify-between"
+         style="border-bottom: 2px solid var(--color-border); background: var(--color-bg);">
+      <div>
+        <h2 class="font-bold text-sm" style="font-family: var(--font-display);">🗺 Програма онбордингу</h2>
+        <p class="text-xs mt-0.5" style="color: var(--color-text-muted);">
+          {{ user_track.track.title }} · {{ user_track.track.position_name }}
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl font-bold"
+              style="font-family: var(--font-display);
+                     color: {% if overall_pct2 == 100 %}var(--color-success){% elif overall_pct2 > 0 %}var(--color-primary){% else %}var(--color-text-muted){% endif %};">
+          {{ overall_pct2 }}%
+        </span>
+        <form action="/admin/onboarding/user/{{ trainee.id }}/unassign" method="post"
+              onsubmit="return confirm('Зняти програму онбордингу з {{ trainee.name }}? Весь прогрес буде видалено.')">
+          <button type="submit"
+                  class="text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style="color: var(--color-error);
+                         border: 1px solid #FECACA;
+                         background: var(--color-error-bg);">
+            Зняти програму
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="px-6 py-3" style="border-bottom: 1px solid var(--color-border);">
+      <div class="flex items-center gap-3">
+        <div class="flex-1 h-2 rounded-full" style="background: var(--color-border);">
+          <div class="h-2 rounded-full transition-all"
+               style="width: {{ overall_pct2 }}%;
+                      background: {% if overall_pct2 == 100 %}var(--color-success){% else %}var(--color-accent){% endif %};"></div>
+        </div>
+        <span class="text-xs font-medium" style="color: var(--color-text-muted);">
+          {{ ns_ob2.done_items }}/{{ ns_ob2.total_items }} завдань
+        </span>
+      </div>
+    </div>
+    <div class="divide-y" style="border-color: var(--color-border);">
+      {% for item in onboarding_stages_progress %}
+      {% set prog = item.progress %}
+      <div class="px-6 py-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                 style="background: {% if prog.is_complete %}var(--color-success){% else %}var(--color-bg){% endif %};
+                        border: 2px solid {% if prog.is_complete %}var(--color-success){% else %}var(--color-border){% endif %};
+                        color: {% if prog.is_complete %}white{% else %}var(--color-text-muted){% endif %};">
+              {% if prog.is_complete %}✓{% else %}○{% endif %}
+            </div>
+            <span class="text-sm font-semibold" style="font-family: var(--font-display);">{{ item.stage.title }}</span>
+          </div>
+          <span class="text-xs font-medium"
+                style="color: {% if prog.is_complete %}var(--color-success){% elif prog.completed > 0 %}var(--color-accent){% else %}var(--color-text-muted){% endif %};">
+            {{ prog.completed }}/{{ prog.total }}
+          </span>
+        </div>
+        <div class="w-full h-1.5 rounded-full" style="background: var(--color-border);">
+          <div class="h-1.5 rounded-full transition-all"
+               style="width: {{ prog.percent }}%;
+                      background: {% if prog.is_complete %}var(--color-success){% else %}var(--color-accent){% endif %};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="mb-6 p-5 rounded-2xl text-center"
+       style="background: var(--color-surface); border: 1px dashed var(--color-border);">
+    <p class="text-sm" style="color: var(--color-text-muted);">🗺 Програму онбордингу ще не призначено</p>
+    <a href="/admin/onboarding" class="text-xs mt-1 block hover:underline"
+       style="color: var(--color-primary);">Призначити програму →</a>
+  </div>
+  {% endif %}
 
   <!-- Empty state -->
   <div class="text-center py-20 rounded-2xl"
