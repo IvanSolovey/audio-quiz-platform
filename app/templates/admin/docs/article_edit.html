@@ -11,7 +11,10 @@
   #preview h3 { font-size: 1rem; font-weight: 700; margin: 0.75rem 0 0.4rem;
                 font-family: var(--font-display); }
   #preview p  { margin: 0.5rem 0; line-height: 1.6; font-size: 0.9rem; }
-  #preview ul, #preview ol { margin: 0.5rem 0 0.5rem 1.25rem; }
+  #preview ul { margin: 0.5rem 0 0.5rem 1.25rem; list-style-type: disc; }
+  #preview ol { margin: 0.5rem 0 0.5rem 1.25rem; list-style-type: decimal; }
+  #preview ul ul { list-style-type: circle; }
+  #preview ol ol { list-style-type: lower-alpha; }
   #preview li { margin: 0.25rem 0; font-size: 0.9rem; }
   #preview code { background: #F1F5F9; padding: 0.1rem 0.3rem;
                   border-radius: 4px; font-size: 0.8rem; }
@@ -106,7 +109,17 @@
       <div class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide"
            style="background: var(--color-bg); border-bottom: 1px solid var(--color-border);
                   color: var(--color-text-muted);">
-        ✏️ Markdown редактор
+        <span>✏️ Markdown редактор</span>
+        <button type="button" id="img-upload-btn"
+                class="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                style="background: var(--color-primary); color: #fff;"
+                onmouseover="this.style.opacity='0.85'"
+                onmouseout="this.style.opacity='1'"
+                onclick="document.getElementById('img-file-input').click()">
+          🖼 Зображення
+        </button>
+        <input type="file" id="img-file-input" accept="image/*" class="hidden">
+        <span id="img-upload-status" class="text-xs" style="color: var(--color-text-muted);"></span>
       </div>
       <textarea
         id="content"
@@ -157,4 +170,55 @@
   </div>
 
 </form>
+
+<script>
+  document.getElementById('img-file-input').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const status = document.getElementById('img-upload-status');
+    const btn = document.getElementById('img-upload-btn');
+    btn.disabled = true;
+    status.textContent = 'Завантаження...';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const resp = await fetch('/admin/docs/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json();
+        status.textContent = '❌ ' + (err.detail || 'Помилка');
+        return;
+      }
+
+      const { url } = await resp.json();
+      const textarea = document.getElementById('content');
+      const altText = file.name.replace(/\.[^.]+$/, '');
+      const markdown = `![${altText}](${url})`;
+
+      // Вставляємо в позицію курсора
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      textarea.value = textarea.value.slice(0, start) + markdown + textarea.value.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
+      textarea.focus();
+
+      // Тригер HTMX preview
+      textarea.dispatchEvent(new Event('keyup', { bubbles: true }));
+
+      status.textContent = '✓ Додано';
+      setTimeout(() => { status.textContent = ''; }, 2000);
+    } catch (e) {
+      status.textContent = '❌ Помилка мережі';
+    } finally {
+      btn.disabled = false;
+      this.value = '';
+    }
+  });
+</script>
 {% endblock %}

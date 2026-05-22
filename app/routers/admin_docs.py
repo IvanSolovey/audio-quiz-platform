@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -11,6 +11,7 @@ from app.database import get_db
 from app.dependencies import require_permission
 from app.models.user import User
 from app.models.knowledge import Category, Article
+from app.services.image_service import upload_image
 from app.services.knowledge_service import (
     get_all_categories,
     get_category_by_slug,
@@ -232,6 +233,18 @@ async def admin_delete_article(
         await delete_article(db, article)
         await db.commit()
     return RedirectResponse("/admin/docs", status_code=303)
+
+
+# ─── Image Upload ─────────────────────────────────────────────────────────────
+
+@router.post("/upload-image")
+async def admin_upload_image(
+    file: UploadFile = File(...),
+    admin: User = Depends(require_permission("manage_knowledge")),
+):
+    """Завантажує зображення в R2, повертає JSON з публічним URL."""
+    url = await upload_image(file)
+    return JSONResponse({"url": url})
 
 
 # ─── HTMX Preview ─────────────────────────────────────────────────────────────
