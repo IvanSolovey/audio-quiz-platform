@@ -5,9 +5,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 import markdown
+from markdown.extensions.toc import TocExtension
 import bleach
 
 from app.models.knowledge import Category, Article
+
+
+def _toc_slugify(value: str, separator: str) -> str:
+    value = value.lower().strip()
+    value = re.sub(r'[^\w\s]', '', value, flags=re.UNICODE)
+    value = re.sub(r'\s+', separator, value)
+    return value.strip(separator)
 
 
 # ─── Slug утиліта ─────────────────────────────────────────────────────────────
@@ -54,7 +62,7 @@ def render_markdown(content: str) -> str:
         'img': ['src', 'alt', 'title', 'width', 'height'],
         'th': ['align'],
         'td': ['align'],
-        '*': ['class'],
+        '*': ['class', 'id'],
     }
 
     html = markdown.markdown(
@@ -63,7 +71,7 @@ def render_markdown(content: str) -> str:
             'tables',
             'fenced_code',
             'codehilite',
-            'toc',
+            TocExtension(slugify=_toc_slugify),
             'nl2br',
             'attr_list',
         ],
