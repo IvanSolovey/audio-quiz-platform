@@ -150,15 +150,22 @@
         background: #FFFBEB; border-radius: 0 8px 8px 0;
         color: var(--color-text-muted);
       }
-      .markdown-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+      .markdown-body table { display: block; width: 100%; overflow-x: auto;
+                              -webkit-overflow-scrolling: touch;
+                              border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
       .markdown-body th { background: var(--color-bg); font-weight: 600;
                            padding: 0.6rem 1rem; text-align: left;
                            border-bottom: 2px solid var(--color-border);
-                           font-family: var(--font-display); }
+                           font-family: var(--font-display); white-space: nowrap; }
       .markdown-body td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--color-border);
                            vertical-align: top; }
       .markdown-body tr:last-child td { border-bottom: none; }
       .markdown-body tr:hover td { background: var(--color-bg); }
+      @media (max-width: 640px) {
+        .markdown-body h1 { font-size: 1.35rem; }
+        .markdown-body h2 { font-size: 1.15rem; }
+        .markdown-body ul, .markdown-body ol { margin-left: 1rem; }
+      }
       .markdown-body a { color: var(--color-primary); text-decoration: underline; }
       .markdown-body del { text-decoration: line-through; color: var(--color-text-muted); }
       .markdown-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.75rem 0; }
