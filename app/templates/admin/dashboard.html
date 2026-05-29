@@ -19,7 +19,7 @@
 </div>
 
 <!-- Статистика -->
-<div class="grid grid-cols-3 gap-4 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
     <div class="p-6 rounded-2xl"
          style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
         <p class="text-4xl font-extrabold mb-1"
@@ -105,10 +105,10 @@
 </div>
 
 <!-- Список тестів -->
-<div class="rounded-2xl overflow-hidden"
+<div class="rounded-2xl overflow-x-auto"
      style="background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
     {% if quizzes %}
-    <table class="w-full text-sm">
+    <table class="w-full text-sm min-w-[560px]">
         <thead style="background: var(--color-bg); border-bottom: 2px solid var(--color-border);">
             <tr>
                 <th class="text-left px-6 py-3 font-semibold text-xs uppercase tracking-wide"

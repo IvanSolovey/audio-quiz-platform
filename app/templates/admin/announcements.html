@@ -123,10 +123,10 @@
   <form action="/admin/announcements/new" method="post">
 
     <!-- TOP ROW: meta fields -->
-    <div class="grid grid-cols-2 gap-4 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
 
       <!-- Title — full width -->
-      <div class="col-span-2">
+      <div class="sm:col-span-2">
         <label class="text-xs font-medium block mb-1"
                style="color: var(--color-text-muted);">
           Заголовок *
@@ -202,7 +202,7 @@
         Текст * <span style="font-weight: 400;">(підтримується Markdown)</span>
       </label>
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-4" style="height: 400px;">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4" style="min-height: 400px;">
 
       <!-- Editor -->
       <textarea name="content" id="ann-body" required

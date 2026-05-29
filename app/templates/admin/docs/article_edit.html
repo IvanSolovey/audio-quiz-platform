@@ -25,7 +25,7 @@
                         padding: 0.5rem 0.75rem; background: #FFFBEB;
                         margin: 0.75rem 0; border-radius: 0 6px 6px 0; }
   #preview table { width: 100%; border-collapse: collapse; margin: 0.75rem 0;
-                   font-size: 0.875rem; }
+                   font-size: 0.875rem; display: block; overflow-x: auto; }
   #preview th { background: var(--color-bg); font-weight: 600;
                 padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--color-border); }
   #preview td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--color-border); }
@@ -51,7 +51,7 @@
       method="post">
 
   <!-- Top bar -->
-  <div class="flex items-center gap-3 mb-4 p-4 rounded-xl"
+  <div class="flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl"
        style="background: var(--color-surface); border: 1px solid var(--color-border);">
 
     <!-- Назва -->
@@ -101,7 +101,7 @@
   </div>
 
   <!-- Split editor -->
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
     <!-- Editor -->
     <div class="editor-pane flex flex-col rounded-2xl overflow-hidden"
